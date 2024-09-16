@@ -39,7 +39,7 @@ ROOT = Path(__file__).parent
 ACCOUNTS = ROOT.joinpath('accounts')
 ACCOUNTS.mkdir(exist_ok=True)
 
-TELEGRAM_RECT = Rect(x=64, y=0, w=1000, h=1500)
+TELEGRAM_RECT = Rect(x=64, y=0, w=850, h=900)
 
 
 def launch_command(*args, bg=False, redirect_null=False):
@@ -98,8 +98,12 @@ def cmd_start(options):
         else:
             print('Please use --create to automatically create a new one')
             sys.exit(1)
-    launch_command(TELEGRAM, '-workdir', str(workdir), bg=True,
-                   redirect_null=True)
+    launch_command(
+        TELEGRAM,
+        '-workdir', str(workdir),
+        '-scale', '100',
+        bg=True,
+        redirect_null=True)
     reposition_telegram()
 
 def reposition_telegram():
@@ -129,6 +133,7 @@ def cmd_screnshot(options):
 
 def telegram_screenshot(filename=None):
     R = TELEGRAM_RECT
+
     os.system(f'import -window root -crop {R.w}x{R.h}+{R.x}+{R.y} {filename}')
     if filename:
         print(f'[SCREENSHOT] saved to {filename}')
