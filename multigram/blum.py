@@ -4,7 +4,6 @@ import numpy as np
 
 TEMPLATE = cv2.imread("img/flower.png")
 
-
 def detect_flowers(image, threshold):
     (tH, tW) = TEMPLATE.shape[:2]
     # convert both the image and template to grayscale

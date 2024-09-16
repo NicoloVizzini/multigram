@@ -10,6 +10,7 @@ options:
     -c, --create                create a new account if it doesn't exist
     --no-redirect               don't redirect stdout/stderr
     --video                     use video file instead of screen capture
+    --dont-click                don't click on the screen
 
 Available commands:
     list                        list all available acconuts
@@ -163,43 +164,64 @@ def cmd_screen_record(options):
     out.release()
     cv2.destroyAllWindows()
 
+def myclick(filename, sleep_after=0):
+    print(f'clicking on {filename}...', end='')
+    sys.stdout.flush()
+    pyautogui.click(filename)
+    if sleep_after:
+        time.sleep(sleep_after)
+    print(' DONE')
 
 def cmd_blum(options):
-    THRESHOLD = 0.5
+    THRESHOLD = 0.75
+    SHOW = True
 
     def on_threshold_change(value):
         nonlocal THRESHOLD
         THRESHOLD = value / 100
 
-    cv2.namedWindow("multigram")
-    cv2.createTrackbar("Threshold", "multigram", int(THRESHOLD * 100), 100, on_threshold_change)
+    do_click = not options['--dont-click']
 
     if options['--video']:
         frames = read_video("screencast.mp4", infinite=True)
         do_click = False
     else:
+        myclick('img/blum-launch.png', sleep_after=5)
+        myclick('img/blum-play.png')
         frames = capture_screen(TELEGRAM_RECT, show_fps=True)
-        do_click = True
 
+    if SHOW:
+        cv2.namedWindow("multigram")
+        cv2.createTrackbar("Threshold", "multigram", int(THRESHOLD * 100), 100, on_threshold_change)
+
+    t = time.time()
     for frame in frames:
         pick = detect_flowers(frame, THRESHOLD)
-        #pick = detect_green_sprites(frame)
-        for (startX, startY, endX, endY) in pick:
-            # draw the bounding box on the image
-            cv2.rectangle(frame, (startX, startY), (endX, endY),
-                          (255, 0, 0), 3)
-
+        if len(pick) > 0:
+            startX, startY, endX, endY = pick[-1]
+            # click on the center of the bounding box
+            x = (startX + endX) // 2 + TELEGRAM_RECT.x
+            y = (startY + endY) // 2 + TELEGRAM_RECT.y
+            print(f'clicking on {x}, {y}')
             if do_click:
-                # click on the center of the bounding box
-                x = (startX + endX) // 2
-                y = (startY + endY) // 2
-                # transform the coordinates to the screen
-                pyautogui.click(x + TELEGRAM_RECT.x, y + TELEGRAM_RECT.y)
+                pyautogui.click(x, y)
+            if SHOW:
+                color = (255, 0, 0)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
 
-        # show the output image
-        cv2.imshow("multigram", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        #if time.time() - t > 10:
+        #    break
+
+        if SHOW:
+            for i, (startX, startY, endX, endY) in enumerate(pick):
+                # draw the bounding box on the image
+                color = (0, 255, 0)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 1)
+            cv2.imshow("multigram", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                print('quit')
+                break
+
 
 def read_video(filename, infinite=False):
     cap = cv2.VideoCapture(filename)
