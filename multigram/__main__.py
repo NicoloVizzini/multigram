@@ -8,6 +8,7 @@ options:
     -h, --help                  shows the help
     -a, --account=NAME          name of the account to launch [default: main]
     -c, --create                create a new account if it doesn't exist
+    --no-redirect               don't redirect stdout/stderr
 
 Available commands:
     list                        list all available acconuts
@@ -112,7 +113,7 @@ def cmd_start(options):
         '-workdir', str(workdir),
         '-scale', '100',
         bg=True,
-        redirect_null=True)
+        redirect_null=not options['--no-redirect'])
     reposition_telegram()
 
 def reposition_telegram():
