@@ -166,7 +166,11 @@ def cmd_blum(opttions):
     THRESHOLD = 0.7
     TEMPLATE = cv2.imread("flower.png")
 
-    for frame in capture_screen(TELEGRAM_RECT, show_fps=True):
+    # read frames from the given video file
+    for frame in read_video("screencast.mp4"):
+    #for frame in capture_screen(TELEGRAM_RECT, show_fps=True):
+
+
         pick = detect_flowers(frame, TEMPLATE, THRESHOLD)
         for (startX, startY, endX, endY) in pick:
             # draw the bounding box on the image
@@ -177,6 +181,14 @@ def cmd_blum(opttions):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+def read_video(filename):
+    cap = cv2.VideoCapture(filename)
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        yield frame
+    cap.release()
 
 
 if __name__ == '__main__':
