@@ -11,13 +11,14 @@ options:
     --no-redirect               don't redirect stdout/stderr
     --video                     use video file instead of screen capture
     --dont-click                don't click on the screen
+    --record=FILE               record a video to FILE while playing
 
 Available commands:
     list                        list all available acconuts
     start                       launch a new telegram instance
     screenshot                  take a screenshot of the telegram window
     screen_record               record the telegram window
-    blum                        develop the blum algorithm
+    blum                        play blum
 """
 
 import sys
@@ -181,6 +182,13 @@ def cmd_blum(options):
         THRESHOLD = value / 100
 
     do_click = not options['--dont-click']
+    RECORD = options['--record'] is not None
+    if RECORD:
+        video_file = options['--record']
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        out = cv2.VideoWriter(video_file, fourcc, 20.0, (TELEGRAM_RECT.w, TELEGRAM_RECT.h))
+    else:
+        out = None
 
     if options['--video']:
         frames = read_video("screencast.mp4", infinite=True)
@@ -212,6 +220,9 @@ def cmd_blum(options):
         #if time.time() - t > 10:
         #    break
 
+        if RECORD:
+            out.write(frame)
+
         if SHOW:
             for i, (startX, startY, endX, endY) in enumerate(pick):
                 # draw the bounding box on the image
@@ -221,6 +232,9 @@ def cmd_blum(options):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 print('quit')
                 break
+
+    if out:
+        out.release()
 
 
 def read_video(filename, infinite=False):
