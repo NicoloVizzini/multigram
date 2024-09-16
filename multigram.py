@@ -16,9 +16,11 @@ Available commands:
 
 import sys
 import os
+import time
 import shlex
 from pathlib import Path
 from docopt import docopt
+from wmctrl import Window
 
 TELEGRAM = '/opt/Telegram/Telegram'
 ROOT = Path(__file__).parent
@@ -81,7 +83,29 @@ def cmd_start(options):
             sys.exit(1)
     launch_command(TELEGRAM, '-workdir', str(workdir), bg=True,
                    redirect_null=True)
+    reposition_telegram()
 
+
+def reposition_telegram():
+    """
+    Wait until the active window is a telegram one, then reposition it to a
+    top-left corner.
+    """
+    def find_window():
+        for i in range(10):
+            w = Window.get_active()
+            print(f'[WINDOW] active window is {w.wm_name} - {w.wm_class}')
+            if w.wm_class == 'Telegram.TelegramDesktop':
+                print('[WINDOW] found!')
+                return w
+            else:
+                time.sleep(0.5)
+        else:
+            print('[WINDOW] telegram not found, aborting')
+            sys.exit(1)
+
+    w = find_window()
+    w.resize_and_move(x=64, y=0, w=1000, h=1500)
 
 
 if __name__ == '__main__':
