@@ -47,7 +47,7 @@ ROOT = Path(__file__).parent.parent
 ACCOUNTS = ROOT.joinpath('accounts')
 ACCOUNTS.mkdir(exist_ok=True)
 
-TELEGRAM_RECT = Rect(x=64, y=0, w=850, h=900)
+TELEGRAM_RECT = Rect(x=64, y=0, w=1000, h=1300)
 
 
 def launch_command(*args, bg=False, redirect_null=False):
@@ -113,7 +113,6 @@ def cmd_start(options):
     launch_command(
         TELEGRAM,
         '-workdir', str(workdir),
-        '-scale', '100',
         bg=True,
         redirect_null=not options['--no-redirect'])
     reposition_telegram()
