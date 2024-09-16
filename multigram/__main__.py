@@ -162,31 +162,39 @@ def cmd_screen_record(options):
     cv2.destroyAllWindows()
 
 
-def cmd_blum(opttions):
-    THRESHOLD = 0.7
-    TEMPLATE = cv2.imread("flower.png")
+def cmd_blum(options):
+    THRESHOLD = 0.5
+
+    def on_threshold_change(value):
+        nonlocal THRESHOLD
+        THRESHOLD = value / 100
+
+    cv2.namedWindow("multigram")
+    cv2.createTrackbar("Threshold", "multigram", int(THRESHOLD * 100), 100, on_threshold_change)
 
     # read frames from the given video file
-    for frame in read_video("screencast.mp4"):
-    #for frame in capture_screen(TELEGRAM_RECT, show_fps=True):
-
-
-        pick = detect_flowers(frame, TEMPLATE, THRESHOLD)
+    for frame in read_video("screencast.mp4", infinite=True):
+        pick = detect_flowers(frame, THRESHOLD)
+        #pick = detect_green_sprites(frame)
         for (startX, startY, endX, endY) in pick:
             # draw the bounding box on the image
             cv2.rectangle(frame, (startX, startY), (endX, endY),
-                (255, 0, 0), 3)
+                          (255, 0, 0), 3)
         # show the output image
         cv2.imshow("multigram", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-def read_video(filename):
+def read_video(filename, infinite=False):
     cap = cv2.VideoCapture(filename)
-    while cap.isOpened():
+    while True:
         ret, frame = cap.read()
         if not ret:
-            break
+            if infinite:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                continue
+            else:
+                break
         yield frame
     cap.release()
 

@@ -2,12 +2,14 @@ import sys
 import cv2
 import numpy as np
 
+TEMPLATE = cv2.imread("img/flower.png")
 
-def detect_flowers(image, template, threshold):
-    (tH, tW) = template.shape[:2]
+
+def detect_flowers(image, threshold):
+    (tH, tW) = TEMPLATE.shape[:2]
     # convert both the image and template to grayscale
     imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    templateGray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+    templateGray = cv2.cvtColor(TEMPLATE, cv2.COLOR_BGR2GRAY)
     # perform template matching
     #print("[INFO] performing template matching...")
     result = cv2.matchTemplate(imageGray, templateGray,
