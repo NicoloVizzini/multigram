@@ -9,13 +9,14 @@ options:
     -a, --account=NAME          name of the account to launch [default: main]
     -c, --create                create a new account if it doesn't exist
     --no-redirect               don't redirect stdout/stderr
+    --video                     use video file instead of screen capture
 
 Available commands:
     list                        list all available acconuts
     start                       launch a new telegram instance
     screenshot                  take a screenshot of the telegram window
     screen_record               record the telegram window
-    blum_dev                    develop the blum algorithm
+    blum                        develop the blum algorithm
 """
 
 import sys
@@ -27,6 +28,7 @@ from pathlib import Path
 from docopt import docopt
 from wmctrl import Window
 import cv2
+import pyautogui
 
 from .screen_record import capture_screen
 from .blum import detect_flowers
@@ -173,14 +175,28 @@ def cmd_blum(options):
     cv2.namedWindow("multigram")
     cv2.createTrackbar("Threshold", "multigram", int(THRESHOLD * 100), 100, on_threshold_change)
 
-    # read frames from the given video file
-    for frame in read_video("screencast.mp4", infinite=True):
+    if options['--video']:
+        frames = read_video("screencast.mp4", infinite=True)
+        do_click = False
+    else:
+        frames = capture_screen(TELEGRAM_RECT, show_fps=True)
+        do_click = True
+
+    for frame in frames:
         pick = detect_flowers(frame, THRESHOLD)
         #pick = detect_green_sprites(frame)
         for (startX, startY, endX, endY) in pick:
             # draw the bounding box on the image
             cv2.rectangle(frame, (startX, startY), (endX, endY),
                           (255, 0, 0), 3)
+
+            if do_click:
+                # click on the center of the bounding box
+                x = (startX + endX) // 2
+                y = (startY + endY) // 2
+                # transform the coordinates to the screen
+                pyautogui.click(x + TELEGRAM_RECT.x, y + TELEGRAM_RECT.y)
+
         # show the output image
         cv2.imshow("multigram", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
