@@ -145,10 +145,15 @@ def telegram_screenshot(filename=None):
 
 
 def cmd_screen_record(options):
+    video_file = "screencast.mp4"
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    out = cv2.VideoWriter(video_file, fourcc, 20.0, (TELEGRAM_RECT.w, TELEGRAM_RECT.h))
     for frame in capture_screen(TELEGRAM_RECT, show_fps=True):
+        out.write(frame)
         cv2.imshow("multigram", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+    out.release()
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
