@@ -13,6 +13,7 @@ Available commands:
     list                        list all available acconuts
     start                       launch a new telegram instance
     screenshot                  take a screenshot of the telegram window
+    screen_record               record the telegram window
 """
 
 import sys
@@ -22,8 +23,10 @@ import shlex
 from dataclasses import dataclass
 from pathlib import Path
 from docopt import docopt
-import pyautogui
 from wmctrl import Window
+import cv2
+
+from .screen_record import capture_screen
 
 @dataclass
 class Rect:
@@ -61,6 +64,8 @@ def main():
         cmd_start(options)
     elif command == 'screenshot':
         cmd_screnshot(options)
+    elif command == 'screen_record':
+        cmd_screen_record(options)
     elif command == 'dev':
         cmd_dev(options)
     else:
@@ -138,6 +143,13 @@ def telegram_screenshot(filename=None):
     if filename:
         print(f'[SCREENSHOT] saved to {filename}')
 
+
+def cmd_screen_record(options):
+    for frame in capture_screen(TELEGRAM_RECT, show_fps=True):
+        cv2.imshow("multigram", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main()
