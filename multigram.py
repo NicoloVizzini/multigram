@@ -25,9 +25,11 @@ ROOT = Path(__file__).parent
 ACCOUNTS = ROOT.joinpath('accounts')
 ACCOUNTS.mkdir(exist_ok=True)
 
-def launch_command(*args, bg=False):
+def launch_command(*args, bg=False, redirect_null=False):
     cmdline = [shlex.quote(arg) for arg in args]
     cmdline = ' '.join(cmdline)
+    if redirect_null:
+        cmdline += ' > /dev/null 2>&1'
     if bg:
         cmdline += ' &'
     print(f'EXEC: {cmdline}')
@@ -40,6 +42,8 @@ def main():
         cmd_list(options)
     elif command == 'start':
         cmd_start(options)
+    elif command == 'dev':
+        cmd_dev(options)
     else:
         print(f'Invalid command: {command}')
         print(__doc__)
@@ -75,7 +79,8 @@ def cmd_start(options):
         else:
             print('Please use --create to automatically create a new one')
             sys.exit(1)
-    launch_command(TELEGRAM, '-workdir', str(workdir), bg=True)
+    launch_command(TELEGRAM, '-workdir', str(workdir), bg=True,
+                   redirect_null=True)
 
 
 
