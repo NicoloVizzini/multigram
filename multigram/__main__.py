@@ -35,7 +35,7 @@ class Rect:
         return (self.x, self.y, self.w, self.h)
 
 TELEGRAM = '/opt/Telegram/Telegram'
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).parent.parent
 ACCOUNTS = ROOT.joinpath('accounts')
 ACCOUNTS.mkdir(exist_ok=True)
 
