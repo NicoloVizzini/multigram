@@ -14,6 +14,7 @@ Available commands:
     start                       launch a new telegram instance
     screenshot                  take a screenshot of the telegram window
     screen_record               record the telegram window
+    blum_dev                    develop the blum algorithm
 """
 
 import sys
@@ -27,6 +28,7 @@ from wmctrl import Window
 import cv2
 
 from .screen_record import capture_screen
+from .blum import detect_flowers
 
 @dataclass
 class Rect:
@@ -66,6 +68,8 @@ def main():
         cmd_screnshot(options)
     elif command == 'screen_record':
         cmd_screen_record(options)
+    elif command == 'blum':
+        cmd_blum(options)
     elif command == 'dev':
         cmd_dev(options)
     else:
@@ -153,8 +157,27 @@ def cmd_screen_record(options):
         cv2.imshow("multigram", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
     out.release()
     cv2.destroyAllWindows()
+
+
+def cmd_blum(opttions):
+    THRESHOLD = 0.7
+    TEMPLATE = cv2.imread("flower.png")
+
+    for frame in capture_screen(TELEGRAM_RECT, show_fps=True):
+        pick = detect_flowers(frame, TEMPLATE, THRESHOLD)
+        for (startX, startY, endX, endY) in pick:
+            # draw the bounding box on the image
+            cv2.rectangle(frame, (startX, startY), (endX, endY),
+                (255, 0, 0), 3)
+        # show the output image
+        cv2.imshow("multigram", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+
 
 if __name__ == '__main__':
     main()
