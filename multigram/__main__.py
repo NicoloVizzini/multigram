@@ -54,7 +54,17 @@ ACCOUNTS = ROOT.joinpath('accounts')
 ACCOUNTS.mkdir(exist_ok=True)
 
 TELEGRAM_RECT = Rect(x=64, y=0, w=1000, h=1300)
-MINIAPP_RECT = Rect(x=528, y=319, w=519, h=822)
+MINIAPP_RECT = Rect(x=304, y=160, w=520, h=820)
+
+def scroll_mid_screen(rect):
+    """
+    Scroll down in the middle of the Telegram window to ensure that the content
+    is fully visible.
+    """
+    mid_x = rect.x + rect.w // 2
+    mid_y = rect.y + rect.h // 2
+    pyautogui.moveTo(mid_x, mid_y)
+    pyautogui.scroll(-500)  # Scroll down
 
 def launch_command(*args, bg=False, redirect_null=False):
     cmdline = [shlex.quote(arg) for arg in args]
@@ -146,7 +156,7 @@ def reposition_telegram():
     win.resize_and_move(x=R.x, y=R.y, w=R.w, h=R.h)
 
 def cmd_screnshot(options):
-    telegram_screenshot('/tmp/telegram.png')
+    telegram_screenshot('/home/nicolo/tg.png')
 
 def telegram_screenshot(filename=None):
     R = TELEGRAM_RECT
@@ -196,6 +206,11 @@ def cmd_blum(options):
     THRESHOLD = 0.66
     SHOW = True
 
+    cmd_start(options)
+    time.sleep(1)
+    pyautogui.write("blum")
+    pyautogui.press('enter')
+
     def on_threshold_change(value):
         nonlocal THRESHOLD
         THRESHOLD = value / 100
@@ -217,6 +232,8 @@ def cmd_blum(options):
             waitkey_delay = 0
     else:
         myclick('img/blum-launch.png', sleep_after=5)
+        scroll_mid_screen(MINIAPP_RECT)
+        time.sleep(0.5)
         myclick('img/blum-play.png')
         frames = capture_screen(RECT, show_fps=True)
 
