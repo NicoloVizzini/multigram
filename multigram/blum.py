@@ -2,7 +2,8 @@ import sys
 import cv2
 import numpy as np
 
-TEMPLATE = cv2.imread("img/flower.png")
+#TEMPLATE = cv2.imread("img/flower.png")
+TEMPLATE = cv2.imread("img/flower2.png")
 
 def detect_flowers(image, threshold):
     (tH, tW) = TEMPLATE.shape[:2]

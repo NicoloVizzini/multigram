@@ -12,6 +12,7 @@ options:
     --video                     use video file instead of screen capture
     --dont-click                don't click on the screen
     --record=FILE               record a video to FILE while playing
+    --step                      step through the video frame by frame
 
 Available commands:
     list                        list all available acconuts
@@ -192,7 +193,7 @@ def robust_sample(lst, k):
 
 def cmd_blum(options):
     RECT = MINIAPP_RECT
-    THRESHOLD = 0.75
+    THRESHOLD = 0.66
     SHOW = True
 
     def on_threshold_change(value):
@@ -208,9 +209,12 @@ def cmd_blum(options):
     else:
         out = None
 
+    waitkey_delay = 1
     if options['--video']:
         frames = read_video("screencast.mp4", infinite=True)
         do_click = False
+        if options['--step']:
+            waitkey_delay = 0
     else:
         myclick('img/blum-launch.png', sleep_after=5)
         myclick('img/blum-play.png')
@@ -227,7 +231,8 @@ def cmd_blum(options):
         for (startX, startY, endX, endY) in flowers:
             # click on the center of the bounding box
             x = (startX + endX) // 2 + RECT.x
-            y = (startY + endY) // 2 + RECT.y
+            #y = (startY + endY) // 2 + RECT.y
+            y = endY + RECT.y - 5 # XXX explain
             print(f'clicking on {x}, {y}')
             if do_click:
                 pyautogui.click(x, y)
@@ -238,6 +243,7 @@ def cmd_blum(options):
         #if time.time() - t > 10:
         #    break
 
+
         if RECORD:
             out.write(frame)
 
@@ -247,7 +253,7 @@ def cmd_blum(options):
                 color = (0, 255, 0)
                 cv2.rectangle(frame, (startX, startY), (endX, endY), color, 1)
             cv2.imshow("multigram", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(waitkey_delay) & 0xFF == ord('q'):
                 print('quit')
                 break
 
