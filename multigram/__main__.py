@@ -186,9 +186,14 @@ def myclick(filename, sleep_after=0):
     print(' DONE')
 
 def cmd_blum(options):
+    cmd_start(options)
+    time.sleep(1)
+    pyautogui.write("blum")
+    pyautogui.press('enter')
+    
     THRESHOLD = 0.75
     SHOW = False
-
+    
     def on_threshold_change(value):
         nonlocal THRESHOLD
         THRESHOLD = value / 100
