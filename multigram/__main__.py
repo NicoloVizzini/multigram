@@ -19,6 +19,7 @@ Available commands:
     screenshot                  take a screenshot of the telegram window
     screen_record               record the telegram window
     blum                        play blum
+    rectsel                     select a rectangle on the screen
 """
 
 import sys
@@ -52,7 +53,7 @@ ACCOUNTS = ROOT.joinpath('accounts')
 ACCOUNTS.mkdir(exist_ok=True)
 
 TELEGRAM_RECT = Rect(x=64, y=0, w=1000, h=1300)
-
+MINIAPP_RECT = Rect(x=528, y=319, w=519, h=822)
 
 def launch_command(*args, bg=False, redirect_null=False):
     cmdline = [shlex.quote(arg) for arg in args]
@@ -77,8 +78,8 @@ def main():
         cmd_screen_record(options)
     elif command == 'blum':
         cmd_blum(options)
-    elif command == 'dev':
-        cmd_dev(options)
+    elif command == 'rectsel':
+        cmd_rectsel(options)
     else:
         print(f'Invalid command: {command}')
         print(__doc__)
@@ -155,10 +156,11 @@ def telegram_screenshot(filename=None):
 
 
 def cmd_screen_record(options):
+    RECT = MINIAPP_RECT
     video_file = "screencast.mp4"
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    out = cv2.VideoWriter(video_file, fourcc, 20.0, (TELEGRAM_RECT.w, TELEGRAM_RECT.h))
-    for frame in capture_screen(TELEGRAM_RECT, show_fps=True):
+    out = cv2.VideoWriter(video_file, fourcc, 20.0, (RECT.w, RECT.h))
+    for frame in capture_screen(RECT, show_fps=True):
         out.write(frame)
         cv2.imshow("multigram", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -166,6 +168,13 @@ def cmd_screen_record(options):
 
     out.release()
     cv2.destroyAllWindows()
+
+def cmd_rectsel(options):
+    from xrectsel import XRectSel
+    xrect = XRectSel()
+    r = xrect.select()
+    r2 = Rect(x=r['start']['x'], y=r['start']['y'], w=r['width'], h=r['height'])
+    print(r2)
 
 def myclick(filename, sleep_after=0):
     print(f'clicking on {filename}...', end='')
@@ -182,6 +191,7 @@ def robust_sample(lst, k):
     return [lst[i] for i in indices]
 
 def cmd_blum(options):
+    RECT = MINIAPP_RECT
     THRESHOLD = 0.75
     SHOW = True
 
@@ -194,7 +204,7 @@ def cmd_blum(options):
     if RECORD:
         video_file = options['--record']
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        out = cv2.VideoWriter(video_file, fourcc, 20.0, (TELEGRAM_RECT.w, TELEGRAM_RECT.h))
+        out = cv2.VideoWriter(video_file, fourcc, 20.0, (RECT.w, RECT.h))
     else:
         out = None
 
@@ -204,7 +214,7 @@ def cmd_blum(options):
     else:
         myclick('img/blum-launch.png', sleep_after=5)
         myclick('img/blum-play.png')
-        frames = capture_screen(TELEGRAM_RECT, show_fps=True)
+        frames = capture_screen(RECT, show_fps=True)
 
     if SHOW:
         cv2.namedWindow("multigram")
@@ -216,8 +226,8 @@ def cmd_blum(options):
         flowers = robust_sample(flowers, 2) # how many flowers to click
         for (startX, startY, endX, endY) in flowers:
             # click on the center of the bounding box
-            x = (startX + endX) // 2 + TELEGRAM_RECT.x
-            y = (startY + endY) // 2 + TELEGRAM_RECT.y
+            x = (startX + endX) // 2 + RECT.x
+            y = (startY + endY) // 2 + RECT.y
             print(f'clicking on {x}, {y}')
             if do_click:
                 pyautogui.click(x, y)
