@@ -6,7 +6,7 @@ usage:
 
 options:
     -h, --help                  shows the help
-    -a, --account=NAME          name of the account to launch [default: main]
+    -a, --account=NAME          name of the account to launch
     -c, --create                create a new account if it doesn't exist
     --no-redirect               don't redirect stdout/stderr
     --video                     use video file instead of screen capture
@@ -118,6 +118,10 @@ def cmd_list(options):
 
 def cmd_start(options):
     account = options['--account']
+    if account is None:
+        print('Please specify an account with -a or --account')
+        sys.exit(1)
+
     workdir = ACCOUNTS.joinpath(account)
     if not workdir.exists():
         print(f'Account {account} does not exist')
