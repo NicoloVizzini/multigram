@@ -34,6 +34,8 @@ import pyautogui
 
 from .screen_record import capture_screen
 from .blum import detect_flowers
+import random
+import numpy as np
 
 @dataclass
 class Rect:
@@ -173,6 +175,12 @@ def myclick(filename, sleep_after=0):
         time.sleep(sleep_after)
     print(' DONE')
 
+def robust_sample(lst, k):
+    if len(lst) < k:
+        return lst
+    indices = np.random.choice(len(lst), k, replace=False)
+    return [lst[i] for i in indices]
+
 def cmd_blum(options):
     THRESHOLD = 0.75
     SHOW = True
@@ -204,9 +212,9 @@ def cmd_blum(options):
 
     t = time.time()
     for frame in frames:
-        pick = detect_flowers(frame, THRESHOLD)
-        if len(pick) > 0:
-            startX, startY, endX, endY = pick[-1]
+        flowers = detect_flowers(frame, THRESHOLD)
+        flowers = robust_sample(flowers, 2) # how many flowers to click
+        for (startX, startY, endX, endY) in flowers:
             # click on the center of the bounding box
             x = (startX + endX) // 2 + TELEGRAM_RECT.x
             y = (startY + endY) // 2 + TELEGRAM_RECT.y
@@ -224,7 +232,7 @@ def cmd_blum(options):
             out.write(frame)
 
         if SHOW:
-            for i, (startX, startY, endX, endY) in enumerate(pick):
+            for i, (startX, startY, endX, endY) in enumerate(flowers):
                 # draw the bounding box on the image
                 color = (0, 255, 0)
                 cv2.rectangle(frame, (startX, startY), (endX, endY), color, 1)
