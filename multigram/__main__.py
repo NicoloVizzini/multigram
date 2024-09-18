@@ -227,7 +227,7 @@ def robust_sample(lst, k):
 
 
 def check_in() :
-    time.sleep(2)
+    time.sleep(3)
     pyautogui.write("blum")
     pyautogui.press('enter')
     myclick('img/blum-launch2.png', sleep_after=5)
@@ -246,6 +246,7 @@ def cmd_blum(options):
     THRESHOLD = 0.66
     SHOW = False
     cmd_start(options)
+    time.sleep(6)
     check_in()
     time.sleep(2)
    
@@ -301,7 +302,7 @@ def cmd_blum(options):
             if time.time() - t > 55:
                 if i!= runs-1:
                     pyautogui.position(0,0)
-                    myclick('img/blum-play-again2.png', sleep_after=5)
+                    myclick('img/blum-play-again2.png', sleep_after=0)
 
                 break
             if RECORD:
@@ -333,7 +334,7 @@ def count_elements_in_directory(directory):
 def cmd_blum_all(options):
    num_elements = count_elements_in_directory(ACCOUNTS)
    for i in range(num_elements):
-        options['--account'] = str(i)
+        options['--number'] = str(i)
         cmd_blum(options) 
     
         
