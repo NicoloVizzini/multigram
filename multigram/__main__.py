@@ -8,6 +8,7 @@ options:
     -h, --help                  shows the help
     -a, --account=NAME          name of the account to launch
     -c, --create                create a new account if it doesn't exist
+    -n, --number=<number>       number of the account you want to launch
     --no-redirect               don't redirect stdout/stderr
     --video                     use video file instead of screen capture
     --dont-click                don't click on the screen
@@ -89,14 +90,15 @@ def main():
         cmd_screen_record(options)
     elif command == 'blum':
         cmd_blum(options)
+    elif command == 'blum_all':
+        cmd_blum_all(options)
     elif command == 'rectsel':
         cmd_rectsel(options)
     else:
         print(f'Invalid command: {command}')
         print(__doc__)
         sys.exit(1)
-
-def cmd_list(options):
+def get_accounts():
     accounts = []
     not_accounts = []
     for child in ACCOUNTS.iterdir():
@@ -105,7 +107,10 @@ def cmd_list(options):
             accounts.append(child.name)
         else:
             not_accounts.append(child.name)
+    return accounts, not_accounts
 
+def cmd_list(options):
+    accounts, not_accounts = get_accounts()
     accounts.sort()
     not_accounts.sort()
     for name in accounts:
@@ -118,24 +123,38 @@ def cmd_list(options):
 
 def cmd_start(options):
     account = options['--account']
-    if account is None:
-        print('Please specify an account with -a or --account')
+    account_number = options['--number']
+    print(account)
+    print(account_number)
+    if account is None and account_number is None:
+        print('Please specify an account with -a or --account or the number of the account with -n or --number')
         sys.exit(1)
+    
+    if options['--account']:
+        workdir = ACCOUNTS.joinpath(account)
+    else:
+        account_dirs = sorted([account for account in ACCOUNTS.iterdir() if account.is_dir()])
+        position = int(options['--number'])
+        print(position)
+        account = account_dirs[position]
+        workdir = ACCOUNTS.joinpath(account)
 
-    workdir = ACCOUNTS.joinpath(account)
     if not workdir.exists():
         print(f'Account {account} does not exist')
         if options['--create']:
             print('Creating a new one...')
         else:
-            print('Please use --create to automatically create a new one')
-            sys.exit(1)
+              print('Please use --create to automatically create a new one')
+              sys.exit(1)
     launch_command(
         TELEGRAM,
         '-workdir', str(workdir),
         bg=True,
         redirect_null=not options['--no-redirect'])
     reposition_telegram()
+    
+
+    
 
 def reposition_telegram():
     """
@@ -221,7 +240,7 @@ def exit_telegram():
     pyautogui.hotkey('alt', 'f4')
 
 def cmd_blum(options):
-    runs = 10
+    runs = 2
     RECT = MINIAPP_RECT
     THRESHOLD = 0.66
     SHOW = False
@@ -278,9 +297,11 @@ def cmd_blum(options):
                     color = (255, 0, 0)
                     cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
 
-            if time.time() - t > 50:
+            if time.time() - t > 55:
                 if i!= runs-1:
-                    pyautogui.click(540, 912)
+                    pyautogui.position(0,0)
+                    myclick('img/blum-play-again2.png', sleep_after=5)
+
                 break
             if RECORD:
                 out.write(frame)
@@ -299,9 +320,22 @@ def cmd_blum(options):
         out.release()
     exit_blum()
     exit_telegram()
+
+def count_elements_in_directory(directory):
+    # List all entries in the directory
+    entries = os.listdir(directory)
+    return len(entries)
+
+
+
+
+def cmd_blum_all(options):
+   num_elements = count_elements_in_directory(ACCOUNTS)
+   for i in range(num_elements):
+        options['--account'] = str(i)
+        cmd_blum(options) 
     
-    
-    
+        
 def read_video(filename, infinite=False):
     cap = cv2.VideoCapture(filename)
     while True:
