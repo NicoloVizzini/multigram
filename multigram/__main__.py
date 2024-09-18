@@ -124,8 +124,6 @@ def cmd_list(options):
 def cmd_start(options):
     account = options['--account']
     account_number = options['--number']
-    print(account)
-    print(account_number)
     if account is None and account_number is None:
         print('Please specify an account with -a or --account or the number of the account with -n or --number')
         sys.exit(1)
@@ -135,9 +133,12 @@ def cmd_start(options):
     else:
         account_dirs = sorted([account for account in ACCOUNTS.iterdir() if account.is_dir()])
         position = int(options['--number'])
-        print(position)
-        account = account_dirs[position]
-        workdir = ACCOUNTS.joinpath(account)
+        if len(account_dirs) > position :
+            account = account_dirs[position]
+            workdir = ACCOUNTS.joinpath(account)
+        else:
+             print('Please use -a or --account and then --create to automatically create a new one')
+             sys.exit(1)
 
     if not workdir.exists():
         print(f'Account {account} does not exist')
