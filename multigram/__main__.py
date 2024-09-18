@@ -205,13 +205,23 @@ def robust_sample(lst, k):
     indices = np.random.choice(len(lst), k, replace=False)
     return [lst[i] for i in indices]
 
+
+def check_in() :
+    time.sleep(2)
+    pyautogui.write("blum")
+    pyautogui.press('enter')
+    myclick('img/blum-launch2.png', sleep_after=5)
+    time.sleep(10)
+    pyautogui.hotkey('alt', 'f4')
+     
 def cmd_blum(options):
+    runs = 10
     RECT = MINIAPP_RECT
     THRESHOLD = 0.66
-    SHOW = True
-
+    SHOW = False
     cmd_start(options)
-    time.sleep(1)
+    check_in()
+    time.sleep(2)
     pyautogui.write("blum")
     pyautogui.press('enter')
 
@@ -235,48 +245,50 @@ def cmd_blum(options):
         if options['--step']:
             waitkey_delay = 0
     else:
-        myclick('img/blum-launch.png', sleep_after=5)
+        x, y = pyautogui.position()  # Get current mouse position
+        pyautogui.click(x, y)  # Click at the current position       
+        time.sleep(5)
         scroll_mid_screen(MINIAPP_RECT)
         time.sleep(0.5)
-        myclick('img/blum-play.png')
+        myclick('img/blum-play2.png')
         frames = capture_screen(RECT, show_fps=True)
 
     if SHOW:
         cv2.namedWindow("multigram")
         cv2.createTrackbar("Threshold", "multigram", int(THRESHOLD * 100), 100, on_threshold_change)
 
-    t = time.time()
-    for frame in frames:
-        flowers = detect_flowers(frame, THRESHOLD)
-        flowers = robust_sample(flowers, 2) # how many flowers to click
-        for (startX, startY, endX, endY) in flowers:
-            # click on the center of the bounding box
-            x = (startX + endX) // 2 + RECT.x
-            #y = (startY + endY) // 2 + RECT.y
-            y = endY + RECT.y - 5 # XXX explain
-            print(f'clicking on {x}, {y}')
-            if do_click:
-                pyautogui.click(x, y)
-            if SHOW:
-                color = (255, 0, 0)
-                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
+    for i in range(runs):
+        t = time.time()
+        for frame in frames:
+            flowers = detect_flowers(frame, THRESHOLD)
+            flowers = robust_sample(flowers, 3)  # how many flowers to click
+            for (startX, startY, endX, endY) in flowers:
+                # click on the center of the bounding box
+                x = (startX + endX) // 2 + RECT.x
+                y = endY + RECT.y - 5  # Adjusted y-coordinate
+                print(f'clicking on {x}, {y}')
+                if do_click:
+                    pyautogui.click(x, y)
+                if SHOW:
+                    color = (255, 0, 0)
+                    cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
 
-        #if time.time() - t > 10:
-        #    break
-
-
-        if RECORD:
-            out.write(frame)
-
-        if SHOW:
-            for i, (startX, startY, endX, endY) in enumerate(flowers):
-                # draw the bounding box on the image
-                color = (0, 255, 0)
-                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 1)
-            cv2.imshow("multigram", frame)
-            if cv2.waitKey(waitkey_delay) & 0xFF == ord('q'):
-                print('quit')
+            if time.time() - t > 50:
+                if i!= runs-1:
+                    pyautogui.click(540, 912)
                 break
+            if RECORD:
+                out.write(frame)
+
+            if SHOW:
+                for i, (startX, startY, endX, endY) in enumerate(flowers):
+                    # draw the bounding box on the image
+                    color = (0, 255, 0)
+                    cv2.rectangle(frame, (startX, startY), (endX, endY), color, 1)
+                cv2.imshow("multigram", frame)
+                if cv2.waitKey(waitkey_delay) & 0xFF == ord('q'):
+                    print('quit')
+                    break
 
     if out:
         out.release()
