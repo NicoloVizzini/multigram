@@ -214,6 +214,12 @@ def check_in() :
     time.sleep(10)
     pyautogui.hotkey('alt', 'f4')
      
+def exit_blum():
+    pyautogui.hotkey('alt', 'f4')
+
+def exit_telegram():
+    pyautogui.hotkey('alt', 'f4')
+
 def cmd_blum(options):
     runs = 10
     RECT = MINIAPP_RECT
@@ -222,8 +228,7 @@ def cmd_blum(options):
     cmd_start(options)
     check_in()
     time.sleep(2)
-    pyautogui.write("blum")
-    pyautogui.press('enter')
+   
 
     def on_threshold_change(value):
         nonlocal THRESHOLD
@@ -292,8 +297,11 @@ def cmd_blum(options):
 
     if out:
         out.release()
-
-
+    exit_blum()
+    exit_telegram()
+    
+    
+    
 def read_video(filename, infinite=False):
     cap = cv2.VideoCapture(filename)
     while True:
