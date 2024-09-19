@@ -214,7 +214,7 @@ def cmd_rectsel(options):
     print(r2)
 
 def myclick(filename, sleep_after=0):
-    print(f'clicking on {filename}...', end='')
+    #print(f'clicking on {filename}...', end='')
     sys.stdout.flush()
     pyautogui.click(filename)
     if sleep_after:
@@ -240,17 +240,18 @@ def farm():#farm is used after check in so I expect the mouse to be on launch bl
            #on it so I make it click on mouse position
     time.sleep(1)
     x, y = pyautogui.position()  # Get current mouse position
-    time.sleep(3)
     pyautogui.click(x, y)  # Click at the current position
+    time.sleep(2)
     for attempt in range(2):  # Allow for 2 attempts
         try:
+            time.sleep(4)
             myclick('img/blum-farm2.png', sleep_after=5)
             x, y = pyautogui.position()  # Get current mouse position
             pyautogui.click(x, y)  # Click at the current position 
             return  # Exit the function if successful
         except Exception as e:
             if attempt < 1:  # Only print this if there's a second attempt
-                print("Retrying...")
+                print("Retrying farm...")
    
 
     
@@ -267,9 +268,9 @@ def cmd_blum(options):
     THRESHOLD = 0.66
     SHOW = False
     cmd_start(options)
-    time.sleep(6)
+    time.sleep(1)
     check_in()
-    time.sleep(2)
+    time.sleep(1)
     farm()
     time.sleep(9)
 
@@ -314,7 +315,7 @@ def cmd_blum(options):
                 # click on the center of the bounding box
                 x = (startX + endX) // 2 + RECT.x
                 y = endY + RECT.y - 5  # Adjusted y-coordinate
-                print(f'clicking on {x}, {y}')
+                #print(f'clicking on {x}, {y}')
                 if do_click:
                     pyautogui.click(x, y)
                 if SHOW:
@@ -324,7 +325,15 @@ def cmd_blum(options):
             if time.time() - t > 55:
                 if i!= runs-1:
                     pyautogui.position(0,0)
-                    myclick('img/blum-play-again2.png', sleep_after=0)
+                    for attempt in range(2):  # Allow for 2 attempts
+                            try:
+                                myclick('img/blum-play-again2.png', sleep_after=0)
+                            except Exception as e:
+                                if attempt < 1:  # Only print this if there's a second attempt
+                                    print("Retrying play again...")
+
+
+                               
 
                 break
             if RECORD:
@@ -360,11 +369,13 @@ def cmd_blum_all(options):
         
         while attempts < 3 and not success:
             try:
+                time.sleep(2)
                 cmd_blum(options)
                 success = True  # If cmd_blum runs successfully, set success to True
             except Exception as e:
                 attempts += 1
-                print(f"Error occurred while processing element {i}: {e}")
+                exit_blum()
+                exit_telegram()
                 print(f"Attempt {attempts} of 3. Restarting cmd_blum...")
 
         if not success:
