@@ -21,6 +21,7 @@ Available commands:
     screenshot                  take a screenshot of the telegram window
     screen_record               record the telegram window
     blum                        play blum
+    blum_all                    play blum on all accounts
     rectsel                     select a rectangle on the screen
 """
 
@@ -107,12 +108,13 @@ def get_accounts():
             accounts.append(child.name)
         else:
             not_accounts.append(child.name)
+    accounts.sort()
+    not_accounts.sort()
     return accounts, not_accounts
+    
 
 def cmd_list(options):
     accounts, not_accounts = get_accounts()
-    accounts.sort()
-    not_accounts.sort()
     for name in accounts:
         print(name)
 
@@ -233,15 +235,34 @@ def check_in() :
     myclick('img/blum-launch2.png', sleep_after=5)
     time.sleep(10)
     pyautogui.hotkey('alt', 'f4')
-     
+    
+def farm():#farm is used after check in so I expect the mouse to be on launch blum, it can't locate it with the mouse click
+           #on it so I make it click on mouse position
+    time.sleep(1)
+    x, y = pyautogui.position()  # Get current mouse position
+    time.sleep(3)
+    pyautogui.click(x, y)  # Click at the current position
+    for attempt in range(2):  # Allow for 2 attempts
+        try:
+            myclick('img/blum-farm2.png', sleep_after=5)
+            x, y = pyautogui.position()  # Get current mouse position
+            pyautogui.click(x, y)  # Click at the current position 
+            return  # Exit the function if successful
+        except Exception as e:
+            if attempt < 1:  # Only print this if there's a second attempt
+                print("Retrying...")
+   
+
+    
 def exit_blum():
     pyautogui.hotkey('alt', 'f4')
 
 def exit_telegram():
     pyautogui.hotkey('alt', 'f4')
 
+
 def cmd_blum(options):
-    runs = 2
+    runs = 10
     RECT = MINIAPP_RECT
     THRESHOLD = 0.66
     SHOW = False
@@ -249,7 +270,8 @@ def cmd_blum(options):
     time.sleep(6)
     check_in()
     time.sleep(2)
-   
+    farm()
+    time.sleep(9)
 
     def on_threshold_change(value):
         nonlocal THRESHOLD
@@ -328,15 +350,25 @@ def count_elements_in_directory(directory):
     entries = os.listdir(directory)
     return len(entries)
 
-
-
-
-def cmd_blum_all(options):
-   num_elements = count_elements_in_directory(ACCOUNTS)
-   for i in range(num_elements):
-        options['--number'] = str(i)
-        cmd_blum(options) 
     
+def cmd_blum_all(options):
+    num_elements = count_elements_in_directory(ACCOUNTS)
+    for i in range(num_elements):
+        options['--number'] = str(i)
+        attempts = 0
+        success = False
+        
+        while attempts < 3 and not success:
+            try:
+                cmd_blum(options)
+                success = True  # If cmd_blum runs successfully, set success to True
+            except Exception as e:
+                attempts += 1
+                print(f"Error occurred while processing element {i}: {e}")
+                print(f"Attempt {attempts} of 3. Restarting cmd_blum...")
+
+        if not success:
+            print(f"Failed to process element {i} after 3 attempts.")
         
 def read_video(filename, infinite=False):
     cap = cv2.VideoCapture(filename)
