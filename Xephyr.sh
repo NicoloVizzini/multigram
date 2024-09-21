@@ -1,22 +1,35 @@
 #!/bin/bash
 
-# check that the first argument is a valid DISPLAY such as :1, :2, etc.
-if [ -z "$1" ] || ! [[ "$1" =~ ^:[0-9]+$ ]]; then
-    echo "Usage: $0 :<display number>"
+# launch N Xephyr servers with ratpoison window manager
+# Usage: Xephyr.sh N
+# where N is the number of Xephyr servers to launch
+
+# check that the first argument is a number
+if [ -z "$1" ] || ! [[ "$1" =~ ^[0-9]+$ ]]; then
+    echo "Usage: $0 <number of Xephyr servers>"
     exit 1
 fi
 
-export D=$1
+N=$1
 
-Xephyr -br -ac -noreset -screen 900x900 $D &
-# wait until the Xephyr server is ready
-while ! xdpyinfo -display $D >/dev/null 2>&1; do
-    sleep 0.1
+function launch_xephyr {
+    D=":$1"
+    echo "Launching Xephyr on display $D"
+    Xephyr -br -ac -noreset -screen 900x900 $D &
+    # wait until the Xephyr server is ready
+    while ! xdpyinfo -display $D >/dev/null 2>&1; do
+        sleep 0.1
+    done
+    ratpoison -d $D &
+}
+
+for i in $(seq 1 $N); do
+    launch_xephyr $i
 done
 
-ratpoison -d $D &
+# wait for all Xephyr servers to exit, or until Ctrl+C is pressed
+wait
 
-# wait until the Xephyr server is closed
-wait %1
-
+# kill all background processes
+kill $(jobs -p)
 
