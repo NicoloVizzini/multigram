@@ -40,7 +40,7 @@ from .screen_record import capture_screen
 from .blum import detect_flowers
 import random
 import numpy as np
-
+import subprocess
 @dataclass
 class Rect:
     x: int
@@ -99,6 +99,7 @@ def main():
         print(f'Invalid command: {command}')
         print(__doc__)
         sys.exit(1)
+        
 def get_accounts():
     accounts = []
     not_accounts = []
@@ -131,12 +132,17 @@ def cmd_start(options):
         sys.exit(1)
     
     if options['--account']:
-        workdir = ACCOUNTS.joinpath(account)
+       print(options['--account'])
+       workdir = ACCOUNTS.joinpath(account)
     else:
+
         account_dirs = sorted([account for account in ACCOUNTS.iterdir() if account.is_dir()])
         position = int(options['--number'])
+        print(position)
         if len(account_dirs) > position :
             account = account_dirs[position]
+            account_name = account.name  # Get the final name of the folder
+            options['--account'] = account.name
             workdir = ACCOUNTS.joinpath(account)
         else:
              print('Please use -a or --account and then --create to automatically create a new one')
@@ -158,7 +164,20 @@ def cmd_start(options):
     
 
     
+def quit(options):
+    account = options['--account']
+    print(account)
+    workdir = ACCOUNTS.joinpath(account)
+    launch_command(
+    TELEGRAM,
+    '-workdir', str(workdir),'-quit',
+    bg=True,
+    redirect_null=not options['--no-redirect'])
+    print(f'Telegram for account {account} has been quit.')
+    options ['--account'] = None
 
+        
+        
 def reposition_telegram():
     """
     Wait until the active window is a telegram one, then reposition it to a
@@ -232,6 +251,7 @@ def check_in() :
     time.sleep(3)
     pyautogui.write("blum")
     pyautogui.press('enter')
+    time.sleep(3)
     myclick('img/blum-launch2.png', sleep_after=5)
     time.sleep(10)
     pyautogui.hotkey('alt', 'f4')
@@ -263,16 +283,16 @@ def exit_telegram():
 
 
 def cmd_blum(options):
-    runs = 10
+    runs = 8
     RECT = MINIAPP_RECT
     THRESHOLD = 0.66
     SHOW = False
     cmd_start(options)
-    time.sleep(1)
+    time.sleep(6)
     check_in()
     time.sleep(1)
     farm()
-    time.sleep(9)
+    time.sleep(6)
 
     def on_threshold_change(value):
         nonlocal THRESHOLD
@@ -353,6 +373,8 @@ def cmd_blum(options):
         out.release()
     exit_blum()
     exit_telegram()
+    quit(options)
+
 
 def count_elements_in_directory(directory):
     # List all entries in the directory
@@ -367,7 +389,7 @@ def cmd_blum_all(options):
         attempts = 0
         success = False
         
-        while attempts < 3 and not success:
+        while attempts < 5 and not success:
             try:
                 time.sleep(2)
                 cmd_blum(options)
@@ -376,7 +398,9 @@ def cmd_blum_all(options):
                 attempts += 1
                 exit_blum()
                 exit_telegram()
-                print(f"Attempt {attempts} of 3. Restarting cmd_blum...")
+                if attempts>2:
+                    quit(options)
+                print(f"Attempt {attempts} of 5. Restarting cmd_blum...")
 
         if not success:
             print(f"Failed to process element {i} after 3 attempts.")
