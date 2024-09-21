@@ -23,6 +23,10 @@ Available commands:
     blum                        play blum
     blum_all                    play blum on all accounts
     rectsel                     select a rectangle on the screen
+    check                       does the check in
+    check_all                   does the check in in all accounts
+    farm                        does the farm
+    farm_all                    does the farm on all accounts
 """
 
 import sys
@@ -35,7 +39,7 @@ from docopt import docopt
 from wmctrl import Window
 import cv2
 import pyautogui
-
+from .utils import wait_and_click, wait_for_image
 from .screen_record import capture_screen
 from .blum import detect_flowers
 import random
@@ -67,7 +71,13 @@ def scroll_mid_screen(rect):
     mid_y = rect.y + rect.h // 2
     pyautogui.moveTo(mid_x, mid_y)
     pyautogui.scroll(-500)  # Scroll down
-
+    
+    
+    
+def wait_for_scroll(img,rect):
+    wait_for_image(img,timeout=10)
+    scroll_mid_screen(rect)
+    
 def launch_command(*args, bg=False, redirect_null=False):
     cmdline = [shlex.quote(arg) for arg in args]
     cmdline = ' '.join(cmdline)
@@ -89,6 +99,14 @@ def main():
         cmd_screnshot(options)
     elif command == 'screen_record':
         cmd_screen_record(options)
+    elif command == 'check':
+        cmd_check(options)
+    elif command == 'check_all':
+        cmd_check_all(options)
+    elif command == 'farm':
+        cmd_farm(options)
+    elif command == 'farm_all':
+        cmd_farm_all(options)
     elif command == 'blum':
         cmd_blum(options)
     elif command == 'blum_all':
@@ -247,31 +265,76 @@ def robust_sample(lst, k):
     return [lst[i] for i in indices]
 
 
-def check_in() :
-    time.sleep(3)
-    pyautogui.write("blum")
-    pyautogui.press('enter')
-    time.sleep(3)
-    myclick('img/blum-launch2.png', sleep_after=5)
-    time.sleep(10)
-    pyautogui.hotkey('alt', 'f4')
-    
-def farm():#farm is used after check in so I expect the mouse to be on launch blum, it can't locate it with the mouse click
-           #on it so I make it click on mouse position
+def cmd_check(options) :
+    RECT = MINIAPP_RECT
+    THRESHOLD = 0.66
+    SHOW = False
+    cmd_start(options)
+    wait_and_click('img/blum-icon.png',timeout = 7)
+    wait_and_click('img/blum-launch2.png', timeout=10)
+    wait_and_click('img/blum-continue.png',timeout=15)
     time.sleep(1)
-    x, y = pyautogui.position()  # Get current mouse position
-    pyautogui.click(x, y)  # Click at the current position
-    time.sleep(2)
-    for attempt in range(2):  # Allow for 2 attempts
-        try:
-            time.sleep(4)
-            myclick('img/blum-farm2.png', sleep_after=5)
-            x, y = pyautogui.position()  # Get current mouse position
-            pyautogui.click(x, y)  # Click at the current position 
-            return  # Exit the function if successful
-        except Exception as e:
-            if attempt < 1:  # Only print this if there's a second attempt
-                print("Retrying farm...")
+    quit(options)
+
+def cmd_check_all(options):
+    num_elements = count_elements_in_directory(ACCOUNTS)
+    for i in range(num_elements):
+        options['--number'] = str(i)
+        attempts = 0
+        success = False
+        
+        while attempts < 5 and not success:
+            try:
+                time.sleep(2)
+                cmd_check(options)
+                success = True  # If cmd_blum runs successfully, set success to True
+            except Exception as e:
+                attempts += 1
+                exit_blum()
+                exit_telegram()
+                if attempts>2:
+                    quit(options)
+                print(f"Attempt {attempts} of 5. Restarting cmd_check...")
+
+        if not success:
+            print(f"Failed to process element {i} after 3 attempts.")
+
+
+def cmd_farm(options):
+    RECT = MINIAPP_RECT
+    THRESHOLD = 0.66
+    SHOW = False
+    cmd_start(options)
+    wait_and_click('img/blum-icon.png',timeout = 7)
+    wait_and_click('img/blum-launch2.png', timeout=10)
+    wait_and_click('img/blum-farm2.png', timeout=10)
+    wait_and_click('img/blum-startfarm.png',timeout=10)
+    time.sleep(1)
+    quit(options)
+           
+
+def cmd_farm_all(options):
+    num_elements = count_elements_in_directory(ACCOUNTS)
+    for i in range(num_elements):
+        options['--number'] = str(i)
+        attempts = 0
+        success = False
+        
+        while attempts < 5 and not success:
+            try:
+                time.sleep(2)
+                cmd_farm(options)
+                success = True  # If cmd_blum runs successfully, set success to True
+            except Exception as e:
+                attempts += 1
+                exit_blum()
+                exit_telegram()
+                if attempts>2:
+                    quit(options)
+                print(f"Attempt {attempts} of 5. Restarting cmd_farm...")
+
+        if not success:
+            print(f"Failed to process element {i} after 3 attempts.")
    
 
     
@@ -288,12 +351,7 @@ def cmd_blum(options):
     THRESHOLD = 0.66
     SHOW = False
     cmd_start(options)
-    time.sleep(6)
-    check_in()
-    time.sleep(1)
-    farm()
-    time.sleep(6)
-
+    
     def on_threshold_change(value):
         nonlocal THRESHOLD
         THRESHOLD = value / 100
@@ -314,12 +372,10 @@ def cmd_blum(options):
         if options['--step']:
             waitkey_delay = 0
     else:
-        x, y = pyautogui.position()  # Get current mouse position
-        pyautogui.click(x, y)  # Click at the current position       
-        time.sleep(5)
-        scroll_mid_screen(MINIAPP_RECT)
-        time.sleep(0.5)
-        myclick('img/blum-play2.png')
+        wait_and_click('img/blum-icon.png',timeout = 7)
+        wait_and_click('img/blum-launch2.png', timeout=10)
+        wait_for_scroll('img/waitforblum.png',MINIAPP_RECT)
+        wait_and_click('img/blum-play2.png',timeout = 10)
         frames = capture_screen(RECT, show_fps=True)
 
     if SHOW:
@@ -342,20 +398,12 @@ def cmd_blum(options):
                     color = (255, 0, 0)
                     cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
 
-            if time.time() - t > 55:
-                if i!= runs-1:
-                    pyautogui.position(0,0)
-                    for attempt in range(2):  # Allow for 2 attempts
-                            try:
-                                myclick('img/blum-play-again2.png', sleep_after=0)
-                            except Exception as e:
-                                if attempt < 1:  # Only print this if there's a second attempt
-                                    print("Retrying play again...")
+            if time.time() - t > 30:
+                    try:
+                        myclick("img/blum-play-again2.png") 
+                    except Exception as e:
+                            pyautogui.moveTo(553,505)
 
-
-                               
-
-                break
             if RECORD:
                 out.write(frame)
 
@@ -371,8 +419,6 @@ def cmd_blum(options):
 
     if out:
         out.release()
-    exit_blum()
-    exit_telegram()
     quit(options)
 
 
@@ -381,7 +427,9 @@ def count_elements_in_directory(directory):
     entries = os.listdir(directory)
     return len(entries)
 
-    
+   
+            
+               
 def cmd_blum_all(options):
     num_elements = count_elements_in_directory(ACCOUNTS)
     for i in range(num_elements):
