@@ -353,7 +353,7 @@ def exit_telegram():
 
 
 def cmd_blum(options):
-    runs = 2
+    runs = 8
     RECT = MINIAPP_RECT
     THRESHOLD = 0.66
     SHOW = False
@@ -407,7 +407,6 @@ def cmd_blum(options):
                     cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
             if time.time() - t > 30:
                     try:
-                        
                         button = detect_button(frame,0.8)
                         for (startX, startY, endX, endY) in button:
                             x = (startX + endX) // 2 + RECT.x
