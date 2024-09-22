@@ -353,7 +353,7 @@ def exit_telegram():
 
 
 def cmd_blum(options):
-    runs = 4
+    runs = 2
     RECT = MINIAPP_RECT
     THRESHOLD = 0.66
     SHOW = False
@@ -390,6 +390,7 @@ def cmd_blum(options):
         cv2.createTrackbar("Threshold", "multigram", int(THRESHOLD * 100), 100, on_threshold_change)
 
     for i in range(runs):
+        print("here")
         t = time.time()
         for frame in frames:
             flowers = detect_flowers(frame, THRESHOLD)
@@ -412,6 +413,7 @@ def cmd_blum(options):
                             x = (startX + endX) // 2 + RECT.x
                             y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
                         pyautogui.click(x,y)
+                        break
                     except Exception as e:
                             pyautogui.moveTo(1,1) #
 
