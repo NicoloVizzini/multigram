@@ -19,7 +19,7 @@ Available commands:
     list                        list all available acconuts
     start                       launch a new telegram instance
     screenshot                  take a screenshot of the telegram window
-    screen_record               record the telegram window
+    screen_record               record the miniapp window
     blum                        play blum
     blum_all                    play blum on all accounts
     rectsel                     select a rectangle on the screen
@@ -41,7 +41,7 @@ import cv2
 import pyautogui
 from .utils import wait_and_click, wait_for_image
 from .screen_record import capture_screen
-from .blum import detect_flowers
+from .blum import detect_flowers, detect_button
 import random
 import numpy as np
 import subprocess
@@ -59,8 +59,9 @@ ROOT = Path(__file__).parent.parent
 ACCOUNTS = ROOT.joinpath('accounts')
 ACCOUNTS.mkdir(exist_ok=True)
 
-TELEGRAM_RECT = Rect(x=64, y=0, w=1000, h=1300)
-MINIAPP_RECT = Rect(x=304, y=160, w=520, h=820)
+TELEGRAM_RECT = Rect(x=0, y=0, w=9000, h=900)
+MINIAPP_RECT = Rect(x=259, y=104, w=398, h=705)
+
 
 def scroll_mid_screen(rect):
     """
@@ -70,6 +71,7 @@ def scroll_mid_screen(rect):
     mid_x = rect.x + rect.w // 2
     mid_y = rect.y + rect.h // 2
     pyautogui.moveTo(mid_x, mid_y)
+    print("Scroll down")
     pyautogui.scroll(-500)  # Scroll down
     
     
@@ -178,7 +180,7 @@ def cmd_start(options):
         '-workdir', str(workdir),
         bg=True,
         redirect_null=not options['--no-redirect'])
-    reposition_telegram()
+    #reposition_telegram()
     
 
     
@@ -195,7 +197,7 @@ def quit(options):
     options ['--account'] = None
 
         
-        
+'''        
 def reposition_telegram():
     """
     Wait until the active window is a telegram one, then reposition it to a
@@ -217,9 +219,9 @@ def reposition_telegram():
     win = find_window()
     R = TELEGRAM_RECT
     win.resize_and_move(x=R.x, y=R.y, w=R.w, h=R.h)
-
+'''
 def cmd_screnshot(options):
-    telegram_screenshot('/home/nicolo/tg.png')
+   telegram_screenshot('/home/nicolo/tg.png')
 
 def telegram_screenshot(filename=None):
     R = TELEGRAM_RECT
@@ -236,9 +238,9 @@ def cmd_screen_record(options):
     out = cv2.VideoWriter(video_file, fourcc, 20.0, (RECT.w, RECT.h))
     for frame in capture_screen(RECT, show_fps=True):
         out.write(frame)
-        cv2.imshow("multigram", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        #cv2.imshow("multigram", frame)
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+            #break
 
     out.release()
     cv2.destroyAllWindows()
@@ -283,16 +285,16 @@ def cmd_check_all(options):
         attempts = 0
         success = False
         
-        while attempts < 5 and not success:
+        while attempts < 2 and not success: #farm isn't that relevant be fast
             try:
                 time.sleep(2)
                 cmd_check(options)
                 success = True  # If cmd_blum runs successfully, set success to True
             except Exception as e:
-                attempts += 1
+                attempts += 1 
                 exit_blum()
                 exit_telegram()
-                if attempts>2:
+                if attempts>1:
                     quit(options)
                 print(f"Attempt {attempts} of 5. Restarting cmd_check...")
 
@@ -373,7 +375,7 @@ def cmd_blum(options):
             waitkey_delay = 0
     else:
         wait_and_click('img/blum-icon.png',timeout = 7)
-        wait_and_click('img/blum-launch2.png', timeout=10)
+        wait_and_click('img/blum-launchx.png', timeout=10)
         wait_for_scroll('img/waitforblum.png',MINIAPP_RECT)
         wait_and_click('img/blum-play2.png',timeout = 10)
         frames = capture_screen(RECT, show_fps=True)
@@ -397,12 +399,17 @@ def cmd_blum(options):
                 if SHOW:
                     color = (255, 0, 0)
                     cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
-
             if time.time() - t > 30:
                     try:
-                        myclick("img/blum-play-again2.png") 
+                        
+                        button = detect_button(frame,10)
+                        print("cerco centro coordinate :")
+                        centerX = (button["startX"] + button["endX"]) // 2 + RECT.x
+                        centerY = (button["startY"] + button["endY"]) // 2 + RECT.y
+                        print(centerX, centerY)
+                        pyautogui.click(centerX,centerY)
                     except Exception as e:
-                            pyautogui.moveTo(553,505)
+                            pyautogui.moveTo(1,1) #
 
             if RECORD:
                 out.write(frame)

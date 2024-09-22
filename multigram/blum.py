@@ -2,9 +2,9 @@ import sys
 import cv2
 import numpy as np
 
-TEMPLATE = cv2.imread("img/flower2.png")
 
 def detect_flowers(image, threshold):
+    TEMPLATE = cv2.imread("img/flower2.png")
     (tH, tW) = TEMPLATE.shape[:2]
     # convert both the image and template to grayscale
     imageGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -30,6 +30,7 @@ def detect_flowers(image, threshold):
     return pick
 
 def non_max_suppression(boxes, overlapThresh=0.3):
+    TEMPLATE = cv2.imread("img/flower2.png")
     # if there are no boxes, return an empty list
     if len(boxes) == 0:
         return []
@@ -69,3 +70,34 @@ def non_max_suppression(boxes, overlapThresh=0.3):
             np.where(overlap > overlapThresh)[0])))
     # return only the bounding boxes that were picked
     return boxes[pick]
+
+def detect_button(image, threshold):
+    import cv2
+import numpy as np
+
+def detect_button(image_path, threshold=0.1):
+    # Load the template directly
+    TEMPLATE = cv2.imread('img/blum-play-again2.png', 0)
+    w, h = TEMPLATE.shape[::-1]
+
+    # Load the image
+    image = cv2.imread(image_path)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Match template
+    res = cv2.matchTemplate(gray, TEMPLATE, cv2.TM_CCOEFF_NORMED)
+    loc = np.where(res >= threshold)
+
+    # Create a list to hold coordinates
+    coordinates = []
+
+    # Get the coordinates of the detected buttons
+    for pt in zip(*loc[::-1]):  # Switch columns and rows
+        coordinates.append((pt[0], pt[1]))  # (x, y) coordinates
+
+        # Optionally draw rectangles around matched areas
+        cv2.rectangle(image, pt, (pt[0] + w, pt[1] + h), (0, 255, 0), 2)
+
+    return coordinates
+
+
