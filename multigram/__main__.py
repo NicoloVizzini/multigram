@@ -353,7 +353,7 @@ def exit_telegram():
 
 
 def cmd_blum(options):
-    runs = 8
+    runs = 5
     RECT = MINIAPP_RECT
     THRESHOLD = 0.66
     SHOW = False
@@ -406,16 +406,13 @@ def cmd_blum(options):
                     color = (255, 0, 0)
                     cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
 
-                try:
                     button = detect_button(frame,0.8)
                     for (startX, startY, endX, endY) in button:
                         x = (startX + endX) // 2 + RECT.x
                         y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
                     pyautogui.click(x,y)
                     break
-                except Exception as e:
-                    if time.time() - t > 30:
-                        pyautogui.moveTo(1,1) #
+                
 
             if RECORD:
                 out.write(frame)
