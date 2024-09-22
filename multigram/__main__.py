@@ -409,12 +409,14 @@ def cmd_blum(options):
                     cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
 
             button = detect_button(frame,0.8)
-            for (startX, startY, endX, endY) in button:
-                x = (startX + endX) // 2 + RECT.x
-                y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
-                pyautogui.click(x,y)
-            if (time.time()-t) > 30:
-                break
+            if button:
+                for (startX, startY, endX, endY) in button:
+                    x = (startX + endX) // 2 + RECT.x
+                    y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
+                    time.sleep(0.5)
+                    pyautogui.click(x,y)
+                if (time.time()-t) > 30:
+                    break
         
 
             if RECORD:
