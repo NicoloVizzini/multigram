@@ -82,6 +82,7 @@ def scroll_mid_screen(rect):
 def wait_for_scroll(img,rect):
     wait_for_image(img,timeout=10)
     scroll_mid_screen(rect)
+    time.sleep(0.2)
     
 def launch_command(*args, bg=False, redirect_null=False):
     cmdline = [shlex.quote(arg) for arg in args]
@@ -390,7 +391,8 @@ def cmd_blum(options):
         cv2.createTrackbar("Threshold", "multigram", int(THRESHOLD * 100), 100, on_threshold_change)
 
     for i in range(runs):
-        print("here")
+        print("doing run n:")
+        print(i)
         t = time.time()
         for frame in frames:
             flowers = detect_flowers(frame, THRESHOLD)
@@ -406,12 +408,13 @@ def cmd_blum(options):
                     color = (255, 0, 0)
                     cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
 
-                button = detect_button(frame,0.8)
-        for (startX, startY, endX, endY) in button:
-            x = (startX + endX) // 2 + RECT.x
-            y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
-        pyautogui.click(x,y)
-        break
+            button = detect_button(frame,0.8)
+            for (startX, startY, endX, endY) in button:
+                x = (startX + endX) // 2 + RECT.x
+                y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
+                pyautogui.click(x,y)
+            if (time.time()-t) > 30:
+                break
         
 
             if RECORD:
