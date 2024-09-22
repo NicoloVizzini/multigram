@@ -63,7 +63,8 @@ ACCOUNTS = ROOT.joinpath('accounts')
 ACCOUNTS.mkdir(exist_ok=True)
 
 TELEGRAM_RECT = Rect(x=0, y=0, w=9000, h=900)
-MINIAPP_RECT = Rect(x=259, y=104, w=398, h=705)
+#MINIAPP_RECT = Rect(x=259, y=104, w=398, h=705)
+MINIAPP_RECT = Rect(x=257, y=158, w=378, h=596)
 
 
 def scroll_mid_screen(rect):
@@ -413,12 +414,12 @@ def cmd_blum(options):
                 for (startX, startY, endX, endY) in button:
                     x = (startX + endX) // 2 + RECT.x
                     y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
-                    time.sleep(0.5)
+                    time.sleep(1)
                     pyautogui.click(x,y)
-                if (time.time()-t) > 30:
                     break
         
-
+            if (time.time()-t)> 60:
+                 break
             if RECORD:
                 out.write(frame)
 
