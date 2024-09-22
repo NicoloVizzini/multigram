@@ -71,17 +71,17 @@ def non_max_suppression(boxes, overlapThresh=0.3):
     # return only the bounding boxes that were picked
     return boxes[pick]
 
-def detect_button(image, threshold):
-    import cv2
-import numpy as np
 
-def detect_button(image_path, threshold=0.1):
+
+def detect_button(image, threshold=0.8):
     # Load the template directly
-    TEMPLATE = cv2.imread('img/blum-play-again2.png', 0)
+    TEMPLATE = cv2.imread('img/a.png', 0)
+    if TEMPLATE is None:
+        raise Exception("Template image not found or could not be loaded.")
+    
     w, h = TEMPLATE.shape[::-1]
 
     # Load the image
-    image = cv2.imread(image_path)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Match template
@@ -90,14 +90,17 @@ def detect_button(image_path, threshold=0.1):
 
     # Create a list to hold coordinates
     coordinates = []
-
-    # Get the coordinates of the detected buttons
     for pt in zip(*loc[::-1]):  # Switch columns and rows
-        coordinates.append((pt[0], pt[1]))  # (x, y) coordinates
+        x_start, y_start = pt
+        x_end = x_start + w
+        y_end = y_start + h
+        coordinates.append((x_start, y_start, x_end, y_end))  # (x_start, y_start, x_end, y_end)
 
-        # Optionally draw rectangles around matched areas
-        cv2.rectangle(image, pt, (pt[0] + w, pt[1] + h), (0, 255, 0), 2)
+        # Draw a rectangle on the original image for visualization
+        cv2.rectangle(image, (x_start, y_start), (x_end, y_end), (0, 255, 0), 2)
+
 
     return coordinates
+
 
 

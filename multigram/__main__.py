@@ -39,12 +39,15 @@ from docopt import docopt
 from wmctrl import Window
 import cv2
 import pyautogui
-from .utils import wait_and_click, wait_for_image
+from .utils import wait_and_click, wait_for_image, set_cv2_DISPLAY
 from .screen_record import capture_screen
 from .blum import detect_flowers, detect_button
 import random
 import numpy as np
 import subprocess
+
+
+
 @dataclass
 class Rect:
     x: int
@@ -91,6 +94,7 @@ def launch_command(*args, bg=False, redirect_null=False):
     return os.system(cmdline)
 
 def main():
+    set_cv2_DISPLAY(":0")
     options = docopt(__doc__)
     command = options.pop('<command>')
     if command == 'list':
@@ -238,9 +242,9 @@ def cmd_screen_record(options):
     out = cv2.VideoWriter(video_file, fourcc, 20.0, (RECT.w, RECT.h))
     for frame in capture_screen(RECT, show_fps=True):
         out.write(frame)
-        #cv2.imshow("multigram", frame)
-        #if cv2.waitKey(1) & 0xFF == ord('q'):
-            #break
+        cv2.imshow("multigram", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
     out.release()
     cv2.destroyAllWindows()
@@ -273,7 +277,7 @@ def cmd_check(options) :
     SHOW = False
     cmd_start(options)
     wait_and_click('img/blum-icon.png',timeout = 7)
-    wait_and_click('img/blum-launch2.png', timeout=10)
+    wait_and_click('img/blum-launchx.png', timeout=10)
     wait_and_click('img/blum-continue.png',timeout=15)
     time.sleep(1)
     quit(options)
@@ -285,7 +289,7 @@ def cmd_check_all(options):
         attempts = 0
         success = False
         
-        while attempts < 2 and not success: #farm isn't that relevant be fast
+        while attempts < 3 and not success: #farm isn't that relevant be fast
             try:
                 time.sleep(2)
                 cmd_check(options)
@@ -303,14 +307,15 @@ def cmd_check_all(options):
 
 
 def cmd_farm(options):
-    RECT = MINIAPP_RECT
-    THRESHOLD = 0.66
-    SHOW = False
+    
     cmd_start(options)
     wait_and_click('img/blum-icon.png',timeout = 7)
-    wait_and_click('img/blum-launch2.png', timeout=10)
+    wait_and_click('img/blum-launchx.png', timeout=10)
     wait_and_click('img/blum-farm2.png', timeout=10)
-    wait_and_click('img/blum-startfarm.png',timeout=10)
+    try:
+        wait_and_click('img/startfarmtribe.png',timeout=10)
+    except Exception as e:
+        wait_and_click('img/startfarm.png',timeout=10)
     time.sleep(1)
     quit(options)
            
@@ -322,7 +327,7 @@ def cmd_farm_all(options):
         attempts = 0
         success = False
         
-        while attempts < 5 and not success:
+        while attempts < 3 and not success:
             try:
                 time.sleep(2)
                 cmd_farm(options)
@@ -331,7 +336,7 @@ def cmd_farm_all(options):
                 attempts += 1
                 exit_blum()
                 exit_telegram()
-                if attempts>2:
+                if attempts>1:
                     quit(options)
                 print(f"Attempt {attempts} of 5. Restarting cmd_farm...")
 
@@ -348,7 +353,7 @@ def exit_telegram():
 
 
 def cmd_blum(options):
-    runs = 8
+    runs = 4
     RECT = MINIAPP_RECT
     THRESHOLD = 0.66
     SHOW = False
@@ -376,7 +381,7 @@ def cmd_blum(options):
     else:
         wait_and_click('img/blum-icon.png',timeout = 7)
         wait_and_click('img/blum-launchx.png', timeout=10)
-        wait_for_scroll('img/waitforblum.png',MINIAPP_RECT)
+        wait_for_scroll ('img/waitforblum.png',MINIAPP_RECT)
         wait_and_click('img/blum-play2.png',timeout = 10)
         frames = capture_screen(RECT, show_fps=True)
 
@@ -402,12 +407,11 @@ def cmd_blum(options):
             if time.time() - t > 30:
                     try:
                         
-                        button = detect_button(frame,10)
-                        print("cerco centro coordinate :")
-                        centerX = (button["startX"] + button["endX"]) // 2 + RECT.x
-                        centerY = (button["startY"] + button["endY"]) // 2 + RECT.y
-                        print(centerX, centerY)
-                        pyautogui.click(centerX,centerY)
+                        button = detect_button(frame,0.8)
+                        for (startX, startY, endX, endY) in button:
+                            x = (startX + endX) // 2 + RECT.x
+                            y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
+                        pyautogui.click(x,y)
                     except Exception as e:
                             pyautogui.moveTo(1,1) #
 
@@ -444,6 +448,29 @@ def cmd_blum_all(options):
         attempts = 0
         success = False
         
+        while attempts < 2 and not success:
+            try:
+                time.sleep(2)
+                cmd_blum(options)
+                success = True  # If cmd_blum runs successfully, set success to True
+            except Exception as e:
+                attempts += 1
+                exit_blum()
+                exit_telegram()
+                if attempts>1:
+                    quit(options)
+                print(f"Attempt {attempts} of 5. Restarting cmd_blum...")
+
+        if not success:
+            print(f"Failed to process element {i} after 3 attempts.")
+        
+def cmd_blum_from_acc(options):
+    num_elements = count_elements_in_directory(ACCOUNTS)
+    for i in range(num_elements):
+        options['--number'] = str(i)
+        attempts = 0
+        success = False
+        
         while attempts < 5 and not success:
             try:
                 time.sleep(2)
@@ -459,7 +486,6 @@ def cmd_blum_all(options):
 
         if not success:
             print(f"Failed to process element {i} after 3 attempts.")
-        
 def read_video(filename, infinite=False):
     cap = cv2.VideoCapture(filename)
     while True:
