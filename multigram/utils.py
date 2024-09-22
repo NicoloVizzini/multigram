@@ -1,8 +1,11 @@
+import os
 import subprocess
 import time
 import itertools
 import pyautogui
 from tqdm import tqdm
+import cv2
+import numpy as np
 
 def wait_for_image(img, *, timeout):
     """
@@ -48,6 +51,33 @@ def get_screen_resolution():
             return width, height
 
     return None  # In case resolution is not found
+
+def set_cv2_DISPLAY(display=":0"):
+    """
+    This is a hack.
+
+    We want to use two DISPLAYs:
+
+      - one for pyautogui and mss, which is the Xephyr window
+      - one for opencv, which is our main X11 (for development)
+
+    Ideally, I would like cv2.imshow("...", img, DISPLAY=":0") but there is no
+    way to pass DISPLAY to imshow.
+
+    The hack is to temporarily change DISPLAY, open and close a small cv2
+    window, and then reset DISPLAY to the old value. This way, cv2 "remembers"
+    the desired value of DISPLAY and next invocations of imshow will use it.
+    """
+    
+    old = os.environ['DISPLAY']
+    os.environ['DISPLAY'] = display
+    try:
+        img = np.zeros((1, 1, 3), dtype=np.uint8)
+        cv2.imshow('dummy image', img)
+        cv2.waitKey(1)
+        cv2.destroyAllWindows()
+    finally:
+        os.environ['DISPLAY'] = old
 
 if __name__ == '__main__':
     resolution = get_screen_resolution()
