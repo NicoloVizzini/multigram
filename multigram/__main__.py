@@ -416,7 +416,7 @@ def cmd_blum(options):
                     y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
                     time.sleep(1)
                     pyautogui.click(x,y)
-                    break
+                break
         
             if (time.time()-t)> 60:
                  break
