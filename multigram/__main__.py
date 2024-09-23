@@ -318,7 +318,7 @@ def cmd_farm(options):
         wait_and_click('img/startfarmtribe.png',timeout=10)
     except Exception as e:
         wait_and_click('img/startfarm.png',timeout=10)
-    time.sleep(1)
+    time.sleep(2)
     quit(options)
            
 
@@ -391,47 +391,56 @@ def cmd_blum(options):
         cv2.namedWindow("multigram")
         cv2.createTrackbar("Threshold", "multigram", int(THRESHOLD * 100), 100, on_threshold_change)
 
-    for i in range(runs):
-        print("doing run n:")
-        print(i)
-        t = time.time()
-        for frame in frames:
-            flowers = detect_flowers(frame, THRESHOLD)
-            flowers = robust_sample(flowers, 3)  # how many flowers to click
-            for (startX, startY, endX, endY) in flowers:
-                # click on the center of the bounding box
-                x = (startX + endX) // 2 + RECT.x
-                y = endY + RECT.y - 5  # Adjusted y-coordinate
-                #print(f'clicking on {x}, {y}')
-                if do_click:
-                    pyautogui.click(x, y)
-                if SHOW:
-                    color = (255, 0, 0)
-                    cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)
-
-            button = detect_button(frame,0.8)
-            if button:
-                for (startX, startY, endX, endY) in button:
-                    x = (startX + endX) // 2 + RECT.x
-                    y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
-                    time.sleep(1)
-                    pyautogui.click(x,y)
-                break
-        
-            if (time.time()-t)> 60:
-                 break
-            if RECORD:
-                out.write(frame)
-
+    #for i in range(runs):
+      #  print("doing run n:")
+       # print(i)
+        #t = time.time()
+    bottone = 0
+    t = time.time()
+    
+    for frame in frames:
+        flowers = detect_flowers(frame, THRESHOLD)
+        flowers = robust_sample(flowers, 3)  # how many flowers to click
+        for (startX, startY, endX, endY) in flowers:
+            # click on the center of the bounding box
+            x = (startX + endX) // 2 + RECT.x
+            y = endY + RECT.y - 5  # Adjusted y-coordinate
+            #print(f'clicking on {x}, {y}')
+            if do_click:
+                pyautogui.click(x, y)
             if SHOW:
-                for i, (startX, startY, endX, endY) in enumerate(flowers):
-                    # draw the bounding box on the image
-                    color = (0, 255, 0)
-                    cv2.rectangle(frame, (startX, startY), (endX, endY), color, 1)
-                cv2.imshow("multigram", frame)
-                if cv2.waitKey(waitkey_delay) & 0xFF == ord('q'):
-                    print('quit')
-                    break
+                color = (255, 0, 0)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)  
+        
+        
+        if RECORD:
+            out.write(frame)
+
+        if SHOW:
+            for i, (startX, startY, endX, endY) in enumerate(flowers):
+                # draw the bounding box on the image
+                color = (0, 255, 0)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 1)
+            cv2.imshow("multigram", frame)
+            if cv2.waitKey(waitkey_delay) & 0xFF == ord('q'):
+                print('quit')
+                break
+        button = detect_button(frame,0.87)
+        if button:
+            print("Bottone trovato, numero = ")
+            print(bottone)
+            bottone+=1
+            t = time.time()
+            for (startX, startY, endX, endY) in button:
+                x = (startX + endX) // 2 + RECT.x
+                y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
+                time.sleep(1)
+                if(bottone <= 5):
+                    pyautogui.click(x,y) 
+            
+        if(bottone > 5 or time.time()-t>60):
+            print("finite le run:rompo il ciclo")
+            break
 
     if out:
         out.release()
