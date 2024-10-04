@@ -9,19 +9,20 @@ options:
     -a, --account=NAME          name of the account to launch
     -c, --create                create a new account if it doesn't exist
     -n, --number=<number>       number of the account you want to launch
+    -f, --folder = <folder>     specify the folder that contains the accounts
     --no-redirect               don't redirect stdout/stderr
     --video                     use video file instead of screen capture
     --dont-click                don't click on the screen
     --record=FILE               record a video to FILE while playing
     --step                      step through the video frame by frame
-
 Available commands:
     list                        list all available acconuts
     start                       launch a new telegram instance
     screenshot                  take a screenshot of the telegram window
     screen_record               record the miniapp window
     blum                        play blum
-    blum_all                    play blum on all accounts
+    blum_all  play blum on all accounts
+    blum_from_acc
     rectsel                     select a rectangle on the screen
     check                       does the check in
     check_all                   does the check in in all accounts
@@ -65,8 +66,16 @@ ACCOUNTS.mkdir(exist_ok=True)
 TELEGRAM_RECT = Rect(x=0, y=0, w=9000, h=900)
 #MINIAPP_RECT = Rect(x=259, y=104, w=398, h=705)
 MINIAPP_RECT = Rect(x=257, y=158, w=378, h=596)
+pyautogui. FAILSAFE = False
 
 
+def change_ACCOUNTS(options):
+    if options['--folder'] is not None:
+        folder_name = options['--folder']
+        global ACCOUNTS
+        ACCOUNTS = ROOT.joinpath(folder_name)
+        return ACCOUNTS
+    
 def scroll_mid_screen(rect):
     """
     Scroll down in the middle of the Telegram window to ensure that the content
@@ -77,11 +86,11 @@ def scroll_mid_screen(rect):
     pyautogui.moveTo(mid_x, mid_y)
     print("Scroll down")
     pyautogui.scroll(-500)  # Scroll down
-    
-    
+
     
 def wait_for_scroll(img,rect):
     wait_for_image(img,timeout=10)
+    time.sleep(1)
     scroll_mid_screen(rect)
     time.sleep(0.2)
     
@@ -121,6 +130,8 @@ def main():
         cmd_blum_all(options)
     elif command == 'rectsel':
         cmd_rectsel(options)
+    elif command == 'blum_from_acc':
+        cmd_blum_from_acc(options)
     else:
         print(f'Invalid command: {command}')
         print(__doc__)
@@ -141,6 +152,7 @@ def get_accounts():
     
 
 def cmd_list(options):
+    change_ACCOUNTS(options)
     accounts, not_accounts = get_accounts()
     for name in accounts:
         print(name)
@@ -151,6 +163,7 @@ def cmd_list(options):
             print(name)
 
 def cmd_start(options):
+    change_ACCOUNTS(options)
     account = options['--account']
     account_number = options['--number']
     if account is None and account_number is None:
@@ -202,7 +215,18 @@ def quit(options):
     print(f'Telegram for account {account} has been quit.')
     options ['--account'] = None
 
-        
+
+
+def start_blum():
+    wait_and_click('img/blum-icon.png',timeout = 7)
+    wait_and_click('img/blum-launchx.png', timeout=10)
+    try:
+        time.sleep(0.51)
+        wait_and_click('img/OK.png',timeout =5)
+    except Exception as e:
+        pass
+
+ 
 '''        
 def reposition_telegram():
     """
@@ -278,8 +302,7 @@ def cmd_check(options) :
     THRESHOLD = 0.66
     SHOW = False
     cmd_start(options)
-    wait_and_click('img/blum-icon.png',timeout = 7)
-    wait_and_click('img/blum-launchx.png', timeout=10)
+    start_blum()
     wait_and_click('img/blum-continue.png',timeout=15)
     time.sleep(1)
     quit(options)
@@ -300,7 +323,7 @@ def cmd_check_all(options):
                 attempts += 1 
                 exit_blum()
                 exit_telegram()
-                if attempts>1:
+                if attempts>0:
                     quit(options)
                 print(f"Attempt {attempts} of 5. Restarting cmd_check...")
 
@@ -311,9 +334,12 @@ def cmd_check_all(options):
 def cmd_farm(options):
     
     cmd_start(options)
-    wait_and_click('img/blum-icon.png',timeout = 7)
-    wait_and_click('img/blum-launchx.png', timeout=10)
-    wait_and_click('img/blum-farm2.png', timeout=10)
+    start_blum()
+    
+    try:
+        wait_and_click('img/blum-farm2.png', timeout=10)
+    except Exception as e:
+        pass
     try:
         wait_and_click('img/startfarmtribe.png',timeout=10)
     except Exception as e:
@@ -338,7 +364,7 @@ def cmd_farm_all(options):
                 attempts += 1
                 exit_blum()
                 exit_telegram()
-                if attempts>1:
+                if attempts>0:
                     quit(options)
                 print(f"Attempt {attempts} of 5. Restarting cmd_farm...")
 
@@ -355,7 +381,7 @@ def exit_telegram():
 
 
 def cmd_blum(options):
-    runs = 5
+    runs = 3
     RECT = MINIAPP_RECT
     THRESHOLD = 0.66
     SHOW = False
@@ -381,8 +407,8 @@ def cmd_blum(options):
         if options['--step']:
             waitkey_delay = 0
     else:
-        wait_and_click('img/blum-icon.png',timeout = 7)
-        wait_and_click('img/blum-launchx.png', timeout=10)
+        start_blum()
+        time.sleep(1)
         wait_for_scroll ('img/waitforblum.png',MINIAPP_RECT)
         wait_and_click('img/blum-play2.png',timeout = 10)
         frames = capture_screen(RECT, show_fps=True)
@@ -425,20 +451,21 @@ def cmd_blum(options):
             if cv2.waitKey(waitkey_delay) & 0xFF == ord('q'):
                 print('quit')
                 break
-        button = detect_button(frame,0.87)
+        button = detect_button(frame,0.86)
         if button:
             print("Bottone trovato, numero = ")
-            print(bottone)
             bottone+=1
+            print(bottone)
             t = time.time()
             for (startX, startY, endX, endY) in button:
                 x = (startX + endX) // 2 + RECT.x
                 y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
-                time.sleep(1)
-                if(bottone <= 5):
+                if(bottone <= runs):
+                    time.sleep(2)
                     pyautogui.click(x,y) 
+                break
             
-        if(bottone > 5 or time.time()-t>60):
+        if(bottone > runs or time.time()-t>60):
             print("finite le run:rompo il ciclo")
             break
 
@@ -466,21 +493,22 @@ def cmd_blum_all(options):
             try:
                 time.sleep(2)
                 cmd_blum(options)
+                cmd_blum(options)
+                cmd_blum(options)
+
                 success = True  # If cmd_blum runs successfully, set success to True
             except Exception as e:
                 attempts += 1
-                exit_blum()
-                exit_telegram()
-                if attempts>1:
-                    quit(options)
+                quit(options)
                 print(f"Attempt {attempts} of 5. Restarting cmd_blum...")
 
         if not success:
             print(f"Failed to process element {i} after 3 attempts.")
         
 def cmd_blum_from_acc(options):
+    start_from = 16
     num_elements = count_elements_in_directory(ACCOUNTS)
-    for i in range(num_elements):
+    for i in range(start_from,num_elements):
         options['--number'] = str(i)
         attempts = 0
         success = False
@@ -488,7 +516,7 @@ def cmd_blum_from_acc(options):
         while attempts < 5 and not success:
             try:
                 time.sleep(2)
-                cmd_blum(options)
+                cmd_farm(options)
                 success = True  # If cmd_blum runs successfully, set success to True
             except Exception as e:
                 attempts += 1
