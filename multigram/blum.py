@@ -1,6 +1,39 @@
+
 import sys
+import os
+import time
+import shlex
+from dataclasses import dataclass
+from pathlib import Path
+from docopt import docopt
+from wmctrl import Window
 import cv2
+import pyautogui
+from .screen_record import capture_screen
+import random
 import numpy as np
+import subprocess
+from .utils import *
+
+
+@dataclass
+class Rect:
+    x: int
+    y: int
+    w: int
+    h: int
+    def as_tuple(self):
+        return (self.x, self.y, self.w, self.h)
+
+TELEGRAM = '/opt/Telegram/Telegram'
+ROOT = Path(__file__).parent.parent
+ACCOUNTS = ROOT.joinpath('accounts')
+ACCOUNTS.mkdir(exist_ok=True)
+
+TELEGRAM_RECT = Rect(x=0, y=0, w=9000, h=900)
+#MINIAPP_RECT = Rect(x=259, y=104, w=398, h=705)
+MINIAPP_RECT = Rect(x=257, y=158, w=378, h=596)
+pyautogui. FAILSAFE = False
 
 
 def detect_flowers(image, threshold):
@@ -104,3 +137,237 @@ def detect_button(image, threshold=0.8):
 
 
 
+def start_blum():
+    wait_and_click('img/blum-icon.png',timeout = 7)
+    wait_and_click('img/blum-launchx.png', timeout=10)
+    try:
+        time.sleep(0.51)
+        wait_and_click('img/OK.png',timeout =5)
+    except Exception as e:
+        pass
+
+
+def cmd_check(options) :
+    RECT = MINIAPP_RECT
+    THRESHOLD = 0.66
+    SHOW = False
+    cmd_start(options)
+    start_blum()
+    wait_and_click('img/blum-continue.png',timeout=15)
+    time.sleep(1)
+    quit(options)
+
+def cmd_check_all(options):
+    num_elements = count_elements_in_directory(ACCOUNTS)
+    for i in range(num_elements):
+        options['--number'] = str(i)
+        attempts = 0
+        success = False
+        
+        while attempts < 3 and not success: #farm isn't that relevant be fast
+            try:
+                time.sleep(2)
+                cmd_check(options)
+                success = True  # If cmd_blum runs successfully, set success to True
+            except Exception as e:
+                attempts += 1 
+                exit_blum()
+                exit_telegram()
+                if attempts>0:
+                    quit(options)
+                print(f"Attempt {attempts} of 5. Restarting cmd_check...")
+
+        if not success:
+            print(f"Failed to process element {i} after 3 attempts.")
+
+
+def cmd_farm(options):
+    
+    cmd_start(options)
+    start_blum()
+    
+    try:
+        wait_and_click('img/blum-farm2.png', timeout=10)
+    except Exception as e:
+        pass
+    try:
+        wait_and_click('img/startfarmtribe.png',timeout=10)
+    except Exception as e:
+        wait_and_click('img/startfarm.png',timeout=10)
+    time.sleep(2)
+    quit(options)
+           
+
+def cmd_farm_all(options):
+    num_elements = count_elements_in_directory(ACCOUNTS)
+    for i in range(num_elements):
+        options['--number'] = str(i)
+        attempts = 0
+        success = False
+        
+        while attempts < 3 and not success:
+            try:
+                time.sleep(2)
+                cmd_farm(options)
+                success = True  # If cmd_blum runs successfully, set success to True
+            except Exception as e:
+                attempts += 1
+                exit_blum()
+                exit_telegram()
+                if attempts>0:
+                    quit(options)
+                print(f"Attempt {attempts} of 5. Restarting cmd_farm...")
+
+        if not success:
+            print(f"Failed to process element {i} after 3 attempts.")
+   
+
+    
+def exit_blum():
+    pyautogui.hotkey('alt', 'f4')
+
+def exit_telegram():
+    pyautogui.hotkey('alt', 'f4')
+
+
+def cmd_blum(options):
+    runs = 3
+    RECT = MINIAPP_RECT
+    THRESHOLD = 0.66
+    SHOW = False
+    cmd_start(options)
+    
+    def on_threshold_change(value):
+        nonlocal THRESHOLD
+        THRESHOLD = value / 100
+
+    do_click = not options['--dont-click']
+    RECORD = options['--record'] is not None
+    if RECORD:
+        video_file = options['--record']
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        out = cv2.VideoWriter(video_file, fourcc, 20.0, (RECT.w, RECT.h))
+    else:
+        out = None
+
+    waitkey_delay = 1
+    if options['--video']:
+        frames = read_video("screencast.mp4", infinite=True)
+        do_click = False
+        if options['--step']:
+            waitkey_delay = 0
+    else:
+        start_blum()
+        time.sleep(1)
+        wait_for_scroll ('img/waitforblum.png',MINIAPP_RECT)
+        wait_and_click('img/blum-play2.png',timeout = 10)
+        frames = capture_screen(RECT, show_fps=True)
+
+    if SHOW:
+        cv2.namedWindow("multigram")
+        cv2.createTrackbar("Threshold", "multigram", int(THRESHOLD * 100), 100, on_threshold_change)
+
+    #for i in range(runs):
+      #  print("doing run n:")
+       # print(i)
+        #t = time.time()
+    bottone = 0
+    t = time.time()
+    
+    for frame in frames:
+        flowers = detect_flowers(frame, THRESHOLD)
+        flowers = robust_sample(flowers, 3)  # how many flowers to click
+        for (startX, startY, endX, endY) in flowers:
+            # click on the center of the bounding box
+            x = (startX + endX) // 2 + RECT.x
+            y = endY + RECT.y - 5  # Adjusted y-coordinate
+            #print(f'clicking on {x}, {y}')
+            if do_click:
+                pyautogui.click(x, y)
+            if SHOW:
+                color = (255, 0, 0)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 3)  
+        
+        
+        if RECORD:
+            out.write(frame)
+
+        if SHOW:
+            for i, (startX, startY, endX, endY) in enumerate(flowers):
+                # draw the bounding box on the image
+                color = (0, 255, 0)
+                cv2.rectangle(frame, (startX, startY), (endX, endY), color, 1)
+            cv2.imshow("multigram", frame)
+            if cv2.waitKey(waitkey_delay) & 0xFF == ord('q'):
+                print('quit')
+                break
+        button = detect_button(frame,0.86)
+        if button:
+            print("Bottone trovato, numero = ")
+            bottone+=1
+            print(bottone)
+            t = time.time()
+            for (startX, startY, endX, endY) in button:
+                x = (startX + endX) // 2 + RECT.x
+                y = (startY + endY) //2 + RECT.y   # Adjusted y-coordinate
+                if(bottone <= runs):
+                    time.sleep(2)
+                    pyautogui.click(x,y) 
+                break
+            
+        if(bottone > runs or time.time()-t>60):
+            print("finite le run:rompo il ciclo")
+            break
+
+    if out:
+        out.release()
+    quit(options)
+
+
+               
+def cmd_blum_all(options):
+    num_elements = count_elements_in_directory(ACCOUNTS)
+    for i in range(num_elements):
+        options['--number'] = str(i)
+        attempts = 0
+        success = False
+        
+        while attempts < 2 and not success:
+            try:
+                time.sleep(2)
+                cmd_blum(options)
+                cmd_blum(options)
+                cmd_blum(options)
+
+                success = True  # If cmd_blum runs successfully, set success to True
+            except Exception as e:
+                attempts += 1
+                quit(options)
+                print(f"Attempt {attempts} of 5. Restarting cmd_blum...")
+
+        if not success:
+            print(f"Failed to process element {i} after 3 attempts.")
+        
+def cmd_blum_from_acc(options):
+    start_from = 16
+    num_elements = count_elements_in_directory(ACCOUNTS)
+    for i in range(start_from,num_elements):
+        options['--number'] = str(i)
+        attempts = 0
+        success = False
+        
+        while attempts < 5 and not success:
+            try:
+                time.sleep(2)
+                cmd_farm(options)
+                success = True  # If cmd_blum runs successfully, set success to True
+            except Exception as e:
+                attempts += 1
+                exit_blum()
+                exit_telegram()
+                if attempts>2:
+                    quit(options)
+                print(f"Attempt {attempts} of 5. Restarting cmd_blum...")
+
+        if not success:
+            print(f"Failed to process element {i} after 3 attempts.")
