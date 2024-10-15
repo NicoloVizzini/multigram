@@ -199,6 +199,8 @@ def cmd_farm(options):
            
 
 def cmd_farm_all(options):
+    log_file_name = "blumr.txt"
+    account_name = "placeholder"
     num_elements = count_elements_in_directory(ACCOUNTS)
     for i in range(num_elements):
         options['--number'] = str(i)
@@ -219,6 +221,7 @@ def cmd_farm_all(options):
                 print(f"Attempt {attempts} of 5. Restarting cmd_farm...")
 
         if not success:
+            log_failure(i, account_name, log_file_name)
             print(f"Failed to process element {i} after 3 attempts.")
    
 

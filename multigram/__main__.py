@@ -30,6 +30,8 @@ Available commands:
     farm_all                    does the farm on all accounts
     money_setup
     money_setup_all
+    set_yescoin             
+    set_yescoin_all
 """
 
 import sys
@@ -46,6 +48,7 @@ from .utils import wait_and_click, wait_for_image, set_cv2_DISPLAY
 from .screen_record import capture_screen
 from .blum import *
 from .moneydogs import *
+from .yescoin import cmd_set_yescoin, cmd_set_yescoin_all
 import random
 import numpy as np
 import subprocess
@@ -104,6 +107,10 @@ def main():
         cmd_money_setup(options)
     elif command == 'money_setup_all':
         cmd_money_setup_all(options)
+    elif command == 'set_yescoin':
+        cmd_set_yescoin(options)
+    elif command == 'set_yescoin_all':
+        cmd_set_yescoin_all(options)
     else:
         print(f'Invalid command: {command}')
         print(__doc__)
