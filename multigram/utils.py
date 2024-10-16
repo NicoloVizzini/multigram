@@ -30,7 +30,8 @@ class Rect:
     def as_tuple(self):
         return (self.x, self.y, self.w, self.h)
 
-TELEGRAM = '/opt/Telegram/Telegram'
+TELEGRAM = '/home/nicolo/telegram-desktop-flatpack'
+
 ROOT = Path(__file__).parent.parent
 ACCOUNTS = ROOT.joinpath('accounts')
 ACCOUNTS.mkdir(exist_ok=True)
@@ -39,6 +40,16 @@ TELEGRAM_RECT = Rect(x=0, y=0, w=9000, h=900)
 #MINIAPP_RECT = Rect(x=259, y=104, w=398, h=705)
 MINIAPP_RECT = Rect(x=257, y=158, w=378, h=596)
 pyautogui. FAILSAFE = False
+
+def log_failure(account_number, account_name, log_file_name):
+    """
+    Log the failure of an account to the specified log file.
+    """
+    with open(log_file_name, 'a') as log_file:
+        log_file.write(f"Failed to process account number: {account_number}, name: {account_name}\n")
+    print(f"Logged failure for account number: {account_number}, name: {account_name} in {log_file_name}")
+    
+    
 def wait_for_image(img, *, timeout):
     """
     Wait img appears on screen, until timeout.
@@ -70,7 +81,55 @@ def wait_and_click(img, *, timeout=0):
     p = wait_for_image(img, timeout=timeout)
     pyautogui.click(p)
 
+def wait_and_click_try(img, *, timeout=0):
+    """
+    Same as wait_for_image, but also click on the image as soon as it's found.
+    Handles exceptions gracefully using try-except.
+    """
+    try:
+        p = wait_for_image(img, timeout=timeout)
+        pyautogui.click(p)
+    except Exception as e:
+        # Handle the exception (logging, print, or simply pass)
+        pass
 
+
+
+
+
+def wait_for_image_confidence(img, *, timeout,confidence):
+    """
+    Wait img appears on screen, until timeout.
+    Return the location.
+    """
+    progress = tqdm(
+        desc=f'Locating {img}',
+        unit='s',
+        total=timeout,
+        bar_format='{desc} [{n:.2f}/{total:.2f} s] {bar}'
+    )
+    start = time.time()
+    with progress:
+        i = 0
+        while True:
+            elapsed = time.time() - start
+            progress.update(int(elapsed) - progress.n)
+            if elapsed >= timeout:
+                raise pyautogui.ImageNotFoundException(img)
+            try:
+                return pyautogui.center(pyautogui.locateOnScreen(img,confidence = confidence))
+            except pyautogui.ImageNotFoundException:
+                pass
+            
+            
+def wait_and_click_confidence(img, *, timeout=0,confidence = 0.6):
+    """
+    Same as wait_for_image, but also click on the image as soon as it's found.
+    """
+    p = wait_for_image_confidence(img, timeout=timeout, confidence=confidence)
+    pyautogui.click(p)
+
+    
 def get_screen_resolution():
     # Run xrandr command to get screen information
     output = subprocess.run(['xrandr'], capture_output=True, text=True).stdout
@@ -139,7 +198,8 @@ def change_ACCOUNTS(options):
     if options['--folder'] is not None:
         folder_name = options['--folder']
         global ACCOUNTS
-        ACCOUNTS = ROOT.joinpath(folder_name)
+        #ACCOUNTS = ROOT.joinpath(folder_name) this is the right way but i want to use the usb fast
+        ACCOUNTS = Path('/media/nicolo/F397/accounts')
         return ACCOUNTS
     
 def scroll_mid_screen(rect):
@@ -152,7 +212,31 @@ def scroll_mid_screen(rect):
     pyautogui.moveTo(mid_x, mid_y)
     print("Scroll down")
     pyautogui.scroll(-500)  # Scroll down
+    
+def swipe(rect, swipe_distance=300, duration=0.5):
+    """
+    Scroll down in the middle of the Telegram window to ensure that the content
+    is fully visible, then perform a swipe action.
+    
+    :param rect: The bounding rectangle of the window (with x, y, w, h).
+    :param swipe_distance: Distance to swipe down (default is 300 pixels).
+    :param duration: Duration of the swipe (default is 0.5 seconds).
+    """
+    # Calculate the middle point of the rectangle
+    x = rect.x + int(rect.h * 0.2)
+    y = rect.y + int(rect.h * 0.2)
 
+    pyautogui.moveTo(x, y)
+    
+
+    # Swipe action (hold mouse and drag)
+    start_y = y  
+    end_y = y + swipe_distance  # End position for swipe
+    
+    print("Perform swipe")
+    pyautogui.mouseDown(x, start_y)  # Hold the mouse at the start position
+    pyautogui.moveTo(x, end_y, duration=duration)  # Move while holding down the mouse
+    pyautogui.mouseUp()  # Release the mouse
     
 def wait_for_scroll(img,rect):
     wait_for_image(img,timeout=10)
@@ -334,3 +418,5 @@ def read_video(filename, infinite=False):
                 break
         yield frame
     cap.release()
+
+

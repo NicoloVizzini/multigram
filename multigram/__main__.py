@@ -32,6 +32,9 @@ Available commands:
     money_setup_all
     set_yescoin             
     set_yescoin_all
+    yes_first_setup
+    ysetup
+    ysetup_all
 """
 
 import sys
@@ -48,7 +51,7 @@ from .utils import wait_and_click, wait_for_image, set_cv2_DISPLAY
 from .screen_record import capture_screen
 from .blum import *
 from .moneydogs import *
-from .yescoin import cmd_set_yescoin, cmd_set_yescoin_all
+from .yescoin import cmd_set_yescoin, cmd_set_yescoin_all,cmd_check_in,cmd_check_in_all,cmd_ysetup,cmd_ysetup_all
 import random
 import numpy as np
 import subprocess
@@ -88,9 +91,9 @@ def main():
     elif command == 'screen_record':
         cmd_screen_record(options)
     elif command == 'check':
-        cmd_check(options)
+        cmd_check_in(options)
     elif command == 'check_all':
-        cmd_check_all(options)
+        cmd_check_in_all(options)
     elif command == 'farm':
         cmd_farm(options)
     elif command == 'farm_all':
@@ -111,6 +114,10 @@ def main():
         cmd_set_yescoin(options)
     elif command == 'set_yescoin_all':
         cmd_set_yescoin_all(options)
+    elif command == 'ysetup':
+        cmd_ysetup(options)
+    elif command == 'ysetup_all':
+        cmd_ysetup_all(options)
     else:
         print(f'Invalid command: {command}')
         print(__doc__)
