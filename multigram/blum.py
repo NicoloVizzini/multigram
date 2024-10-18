@@ -145,7 +145,12 @@ def start_blum():
         wait_and_click('img/OK.png',timeout =5)
     except Exception as e:
         pass
-
+    try:
+        wait_for_image('img/waitforblum.png',timeout =10)
+    except Exception as e:
+        pyautogui.hotkey('ctrl', 'w')
+        wait_and_click('img/blum-launchx.png', timeout=10)
+            
 
 def cmd_check(options) :
     RECT = MINIAPP_RECT
@@ -207,7 +212,7 @@ def cmd_farm_all(options):
         attempts = 0
         success = False
         
-        while attempts < 3 and not success:
+        while attempts < 5 and not success:
             try:
                 time.sleep(2)
                 cmd_farm(options)
@@ -234,7 +239,7 @@ def exit_telegram():
 
 
 def cmd_blum(options):
-    runs = 3
+    runs = 6
     RECT = MINIAPP_RECT
     THRESHOLD = 0.66
     SHOW = False
@@ -335,7 +340,7 @@ def cmd_blum_all(options):
         attempts = 0
         success = False
         
-        while attempts < 2 and not success:
+        while attempts < 5 and not success:
             try:
                 time.sleep(2)
                 cmd_blum(options)
