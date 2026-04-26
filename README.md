@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/d3b13c11-85d0-4a78-b48e-9402f3807d66
+
 # Multigram
 
 Run and automate multiple Telegram instances simultaneously, with support for mini-app automation (Blum, Yescoin, Moneydogs, and more).
